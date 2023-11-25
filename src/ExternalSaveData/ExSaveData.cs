@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using HarmonyLib;
@@ -7,18 +5,18 @@ using HarmonyLib;
 namespace CM3D2.ExternalSaveData.Managed;
 
 public static class ExSaveData {
-	static SaveDataPluginSettings saveDataPluginSettings = new();
+	private static SaveDataPluginSettings saveDataPluginSettings = new();
 
 	// 拡張セーブデータの実体
-	static SaveDataPluginSettings PluginSettings => saveDataPluginSettings;
+	private static SaveDataPluginSettings PluginSettings => saveDataPluginSettings;
 
 	// 通常のプラグイン名よりも前に処理するため、先頭に '.' をつけている。
 	// 通常のプラグインは "CM3D2～" のように英数字から始まる名前をつけること
-	const string CallbackName = ".CM3D2 ExternalSaveData";
+	private const string CallbackName = ".CM3D2 ExternalSaveData";
 
 	public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode) {
-		if (PluginSettings.saveData.maids.TryGetValue(maid.status.guid, out var m)) {
-			if (m.plugins.TryGetValue(pluginName, out var plugin)) {
+		if (PluginSettings.saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
+			if (maidSaveData.Plugins.TryGetValue(pluginName, out var plugin)) {
 				plugin.Save(xmlNode);
 				return true;
 			}
@@ -31,11 +29,11 @@ public static class ExSaveData {
 			SetMaid(maid);
 		}
 
-		if (PluginSettings.saveData.maids.TryGetValue(maid.status.guid, out var m)) {
-			if (m.plugins.TryGetValue(pluginName, out var plugin)) {
+		if (PluginSettings.saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
+			if (maidSaveData.Plugins.TryGetValue(pluginName, out var plugin)) {
 				plugin.Load(xmlNode);
 			} else {
-				m.plugins[pluginName] = new SaveDataPluginSettings.Plugin().Load(xmlNode);
+				maidSaveData.Plugins[pluginName] = new SaveDataPluginSettings.Plugin().Load(xmlNode);
 			}
 		}
 	}
@@ -203,7 +201,7 @@ public static class ExSaveData {
 	public static void CleanupMaids() {
 		var guids = new List<string>();
 		var cm = GameMain.Instance.CharacterMgr;
-		for (int i = 0, n = cm.GetStockMaidCount(); i < n; i++) {
+		for (var i = 0; i < cm.GetStockMaidCount(); i++) {
 			var maid = cm.GetStockMaid(i);
 			guids.Add(maid.status.guid);
 		}
@@ -345,12 +343,12 @@ public static class ExSaveData {
 		return that.MakeSavePathFileName(f_nSaveNo);
 	}
 
-	static bool SetMaidName(Maid maid) {
+	private static bool SetMaidName(Maid maid) {
 		if (maid == null) {
 			return false;
 		}
-		var s = maid.status;
-		return PluginSettings.SetMaidName(s.guid, s.lastName, s.firstName, s.creationTime);
+		var status = maid.status;
+		return PluginSettings.SetMaidName(status.guid, status.lastName, status.firstName, status.creationTime);
 	}
 
 	[HarmonyPatch(typeof(GameMain), nameof(GameMain.OnInitialize))]
@@ -371,7 +369,7 @@ public static class ExSaveData {
 
 	[HarmonyPatch(typeof(GameMain), nameof(GameMain.Deserialize))]
 	[HarmonyPostfix]
-	static void deserializeCallback(GameMain __instance, int f_nSaveNo) {
+	private static void OnDeserialize(GameMain __instance, int f_nSaveNo) {
 		try {
 			var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
 			saveDataPluginSettings = new();
@@ -385,10 +383,10 @@ public static class ExSaveData {
 
 	[HarmonyPatch(typeof(GameMain), nameof(GameMain.Serialize))]
 	[HarmonyPostfix]
-	static void serializeCallback(GameMain __instance, int f_nSaveNo, string f_strComment) {
+	private static void OnSerialize(GameMain __instance, int f_nSaveNo, string f_strComment) {
 		try {
 			var cm = GameMain.Instance.CharacterMgr;
-			for (int i = 0, n = cm.GetStockMaidCount(); i < n; i++) {
+			for (var i = 0; i < cm.GetStockMaidCount(); i++) {
 				var maid = cm.GetStockMaid(i);
 				SetMaidName(maid);
 			}
@@ -403,7 +401,7 @@ public static class ExSaveData {
 
 	[HarmonyPatch(typeof(GameMain), nameof(GameMain.DeleteSerializeData))]
 	[HarmonyPostfix]
-	static void deleteSerializeDataCallback(GameMain __instance, int f_nSaveNo) {
+	private static void OnDeleteSerializeData(GameMain __instance, int f_nSaveNo) {
 		try {
 			var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
 			if (File.Exists(xmlFilePath)) {

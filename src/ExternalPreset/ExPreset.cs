@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using CM3D2.ExternalSaveData.Managed;
@@ -10,35 +9,35 @@ using UnityEngine.SceneManagement;
 namespace CM3D2.ExternalPreset.Managed;
 
 public static class ExPreset {
-	static HashSet<string> exsaveNodeNameMap = new();
+	private static readonly HashSet<string> ExternalSaveDataNodes = new();
 
-	static XmlDocument xmlMemory = null;
+	private static XmlDocument _xmlMemory = null;
 
 	// プリセット適用時に通知が必要な場合はここに登録
 	public static UnityEvent loadNotify = new();
 
-	public static void Load(Maid maid, CharacterMgr.Preset f_prest) {
-		PluginsLoad(maid, f_prest);
+	public static void Load(Maid maid, CharacterMgr.Preset preset) {
+		PluginsLoad(maid, preset);
 	}
 
-	static void PluginsLoad(Maid maid, CharacterMgr.Preset f_prest) {
+	private static void PluginsLoad(Maid maid, CharacterMgr.Preset preset) {
 		XmlDocument xml;
 
 		string fileName;
-		if (f_prest.strFileName == "") {
-			xml = xmlMemory;
-			xmlMemory = null;
+		if (preset.strFileName == "") {
+			xml = _xmlMemory;
+			_xmlMemory = null;
 		} else {
-			fileName = f_prest.strFileName + ".expreset.xml";
-			xml = LoadExFile(f_prest.strFileName + ".expreset.xml");
+			fileName = preset.strFileName + ".expreset.xml";
+			xml = LoadExFile(preset.strFileName + ".expreset.xml");
 		}
 
 		if (xml == null) {
 			return;
 		}
 
-		foreach (var pluginName in exsaveNodeNameMap) {
-			var node = xml.SelectSingleNode(@"//plugin[@name='" + pluginName + "']");
+		foreach (var pluginName in ExternalSaveDataNodes) {
+			var node = xml.SelectSingleNode($"//plugin[@name='{pluginName}']");
 			if (node == null) continue;
 
 			ExSaveData.SetXml(maid, pluginName, node);
@@ -53,7 +52,7 @@ public static class ExPreset {
 		}
 	}
 
-	static XmlDocument LoadExFile(string fileName) {
+	private static XmlDocument LoadExFile(string fileName) {
 		// Presetフォルダチェック
 		var path = FindEXPresetFilePath(fileName);
 		// expresetファイルがなければ終了
@@ -77,7 +76,7 @@ public static class ExPreset {
 		var xml = new XmlDocument();
 		var nodeExist = false;
 		var rootNode = xml.AppendChild(xml.CreateElement("plugins"));
-		foreach (var pluginName in exsaveNodeNameMap) {
+		foreach (var pluginName in ExternalSaveDataNodes) {
 			var node = xml.CreateElement("plugin");
 			if (ExSaveData.TryGetXml(f_maid, pluginName, node)) {
 				rootNode.AppendChild(node);
@@ -86,47 +85,47 @@ public static class ExPreset {
 		}
 
 		if (nodeExist) {
-			xmlMemory = xml;
+			_xmlMemory = xml;
 		}
 	}
 
-	public static void Save(Maid maid, string f_strFileName, CharacterMgr.PresetType f_type) {
-		//MaidVoicePitchSave(maid, f_strFileName, f_type);
-		PluginsSave(maid, f_strFileName, f_type);
+	public static void Save(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
+		//MaidVoicePitchSave(maid, presetFileName, presetType);
+		PluginsSave(maid, presetFileName, presetType);
 	}
 
-	static void PluginsSave(Maid maid, string f_strFileName, CharacterMgr.PresetType f_type) {
-		if (f_type == CharacterMgr.PresetType.Wear) {
+	private static void PluginsSave(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
+		if (presetType == CharacterMgr.PresetType.Wear) {
 			return;
 		}
 
 		var xml = new XmlDocument();
-		var nodeExist = false;
+		var hasNodes = false;
 		var rootNode = xml.AppendChild(xml.CreateElement("plugins"));
-		foreach (var pluginName in exsaveNodeNameMap) {
+		foreach (var pluginName in ExternalSaveDataNodes) {
 			var node = xml.CreateElement("plugin");
 			if (ExSaveData.TryGetXml(maid, pluginName, node)) {
 				rootNode.AppendChild(node);
-				nodeExist = true;
+				hasNodes = true;
 			}
 		}
 
-		if (!nodeExist) {
+		if (!hasNodes) {
 			return;
 		}
-		xml.Save($"{Path.GetFullPath(".\\")}Preset\\{f_strFileName}.expreset.xml");
+		xml.Save($"{Path.GetFullPath(".\\")}Preset\\{presetFileName}.expreset.xml");
 	}
 
-	public static void Delete(CharacterMgr.Preset f_prest) {
-		var path = $"{Path.GetFullPath(".\\")}Preset\\{f_prest.strFileName}.expreset.xml";
+	public static void Delete(CharacterMgr.Preset preset) {
+		var path = $"{Path.GetFullPath(".\\")}Preset\\{preset.strFileName}.expreset.xml";
 		if (File.Exists(path)) {
 			File.Delete(path);
 		}
 	}
 
-	static string FindEXPresetFilePath(string fileName) {
+	private static string FindEXPresetFilePath(string presetFileName) {
 		// Presetフォルダチェック
-		var path = $"{Path.GetFullPath(".\\")}Preset\\{fileName}";
+		var path = $"{Path.GetFullPath(".\\")}Preset\\{presetFileName}";
 		if (File.Exists(path)) {
 			return path;
 		}
@@ -136,6 +135,6 @@ public static class ExPreset {
 	// EXSaveDataに保存する情報のうち、EXプリセットにもセーブするノード名を設定
 	// 例はMaidVoicePitchなどを参照
 	public static void AddExSaveNode(string pluginName) {
-		exsaveNodeNameMap.Add(pluginName);
+		ExternalSaveDataNodes.Add(pluginName);
 	}
 }
