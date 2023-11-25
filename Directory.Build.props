@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <BaseOutputPath>..\artifacts\</BaseOutputPath>
+  </PropertyGroup>
+</Project>
