@@ -12,12 +12,12 @@ using UnityEngine.SceneManagement;
 
 namespace CM3D2.ExternalPreset.Managed {
     public static class ExPreset {
-        static HashSet<string> exsaveNodeNameMap = new HashSet<string>();
+        static HashSet<string> exsaveNodeNameMap = new();
 
         static XmlDocument xmlMemory = null;
 
         // プリセット適用時に通知が必要な場合はここに登録
-        public static UnityEvent loadNotify = new UnityEvent();
+        public static UnityEvent loadNotify = new();
 
         public static void Load(Maid maid, CharacterMgr.Preset f_prest) {
             PluginsLoad(maid, f_prest);
@@ -35,7 +35,7 @@ namespace CM3D2.ExternalPreset.Managed {
                 xml = LoadExFile(f_prest.strFileName + ".expreset.xml");
             }
             if (xml == null) return;
-            foreach (string pluginName in exsaveNodeNameMap) {
+            foreach (var pluginName in exsaveNodeNameMap) {
                 var node = xml.SelectSingleNode(@"//plugin[@name='" + pluginName + "']");
                 if (node == null) continue;
 
@@ -68,9 +68,9 @@ namespace CM3D2.ExternalPreset.Managed {
 		public static void PostCharacterMgrPresetSaveNotWriteFile(CharacterMgr __instance, Maid f_maid, CharacterMgr.PresetType f_type) {
             if (f_type == CharacterMgr.PresetType.Wear) return;
             var xml = new XmlDocument();
-            bool nodeExist = false;
+			var nodeExist = false;
             var rootNode = xml.AppendChild(xml.CreateElement("plugins"));
-            foreach (string pluginName in exsaveNodeNameMap) {
+            foreach (var pluginName in exsaveNodeNameMap) {
                 var node = xml.CreateElement("plugin");
                 if (ExSaveData.TryGetXml(f_maid, pluginName, node)) {
                     rootNode.AppendChild(node);
@@ -91,9 +91,9 @@ namespace CM3D2.ExternalPreset.Managed {
         static void PluginsSave(Maid maid, string f_strFileName, CharacterMgr.PresetType f_type) {
             if (f_type == CharacterMgr.PresetType.Wear) return;
             var xml = new XmlDocument();
-            bool nodeExist = false;
+			var nodeExist = false;
             var rootNode = xml.AppendChild(xml.CreateElement("plugins"));
-            foreach (string pluginName in exsaveNodeNameMap) {
+            foreach (var pluginName in exsaveNodeNameMap) {
                 var node = xml.CreateElement("plugin");
                 if (ExSaveData.TryGetXml(maid, pluginName, node)) {
                     rootNode.AppendChild(node);
@@ -106,11 +106,11 @@ namespace CM3D2.ExternalPreset.Managed {
             if (!nodeExist) {
                 return;
             }
-            xml.Save(Path.GetFullPath(".\\") + "Preset\\" + f_strFileName + ".expreset.xml");
+            xml.Save($"{Path.GetFullPath(".\\")}Preset\\{f_strFileName}.expreset.xml");
         }
 
         public static void Delete(CharacterMgr.Preset f_prest) {
-            var path = Path.GetFullPath(".\\") + "Preset\\" + f_prest.strFileName + ".expreset.xml";
+            var path = $"{Path.GetFullPath(".\\")}Preset\\{f_prest.strFileName}.expreset.xml";
             if (File.Exists(path)) {
                 File.Delete(path);
             }
@@ -118,7 +118,7 @@ namespace CM3D2.ExternalPreset.Managed {
 
         static string FindEXPresetFilePath(string fileName) {
             // Presetフォルダチェック
-            var path = Path.GetFullPath(".\\") + "Preset\\" + fileName;
+            var path = $"{Path.GetFullPath(".\\")}Preset\\{fileName}";
             if (File.Exists(path)) return path;
 
             return null;

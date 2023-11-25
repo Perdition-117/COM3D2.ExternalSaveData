@@ -10,28 +10,25 @@ namespace CM3D2.ExternalSaveData.Managed
 {
     public static class ExSaveData
     {
-        static SaveDataPluginSettings saveDataPluginSettings = new SaveDataPluginSettings();
+        static SaveDataPluginSettings saveDataPluginSettings = new();
 
-        // 拡張セーブデータの実体
-        static SaveDataPluginSettings PluginSettings { get { return saveDataPluginSettings; } }
+		// 拡張セーブデータの実体
+		static SaveDataPluginSettings PluginSettings => saveDataPluginSettings;
 
-        // 通常のプラグイン名よりも前に処理するため、先頭に '.' をつけている。
-        // 通常のプラグインは "CM3D2～" のように英数字から始まる名前をつけること
-        const string CallbackName = ".CM3D2 ExternalSaveData";
+		// 通常のプラグイン名よりも前に処理するため、先頭に '.' をつけている。
+		// 通常のプラグインは "CM3D2～" のように英数字から始まる名前をつけること
+		const string CallbackName = ".CM3D2 ExternalSaveData";
 
         public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode)
         {
-            SaveDataPluginSettings.Maid m;
-            if (PluginSettings.saveData.maids.TryGetValue(maid.status.guid, out m))
+			if (PluginSettings.saveData.maids.TryGetValue(maid.status.guid, out var m))
             {
-                SaveDataPluginSettings.Plugin plugin;
-                if (m.plugins.TryGetValue(pluginName, out plugin))
-                {
-                    plugin.Save(xmlNode);
-                    return true;
-                }
-            }
-            return false;
+				if (m.plugins.TryGetValue(pluginName, out var plugin)) {
+					plugin.Save(xmlNode);
+					return true;
+				}
+			}
+			return false;
         }
         
         public static void SetXml(Maid maid, string pluginName, XmlNode xmlNode)
@@ -41,11 +38,9 @@ namespace CM3D2.ExternalSaveData.Managed
                 SetMaid(maid);
             }
             
-            SaveDataPluginSettings.Maid m;
-            if (PluginSettings.saveData.maids.TryGetValue(maid.status.guid, out m))
+            if (PluginSettings.saveData.maids.TryGetValue(maid.status.guid, out var m))
             {
-                SaveDataPluginSettings.Plugin plugin;
-                if (m.plugins.TryGetValue(pluginName, out plugin))
+                if (m.plugins.TryGetValue(pluginName, out var plugin))
                 {
                     plugin.Load(xmlNode);
                 }
@@ -248,11 +243,11 @@ namespace CM3D2.ExternalSaveData.Managed
 
         public static void CleanupMaids()
         {
-            List<string> guids = new List<string>();
-            CharacterMgr cm = GameMain.Instance.CharacterMgr;
+			var guids = new List<string>();
+			var cm = GameMain.Instance.CharacterMgr;
             for (int i = 0, n = cm.GetStockMaidCount(); i < n; i++)
             {
-                Maid maid = cm.GetStockMaid(i);
+				var maid = cm.GetStockMaid(i);
                 guids.Add(maid.status.guid);
             }
             CleanupMaids(guids);
@@ -450,8 +445,8 @@ namespace CM3D2.ExternalSaveData.Managed
         {
             try
             {
-                string xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
-                saveDataPluginSettings = new SaveDataPluginSettings();
+				var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+                saveDataPluginSettings = new();
                 if (File.Exists(xmlFilePath))
                 {
                     PluginSettings.Load(xmlFilePath);
@@ -469,15 +464,15 @@ namespace CM3D2.ExternalSaveData.Managed
         {
             try
             {
-                CharacterMgr cm = GameMain.Instance.CharacterMgr;
+				var cm = GameMain.Instance.CharacterMgr;
                 for (int i = 0, n = cm.GetStockMaidCount(); i < n; i++)
                 {
-                    Maid maid = cm.GetStockMaid(i);
+					var maid = cm.GetStockMaid(i);
                     SetMaidName(maid);
                 }
                 CleanupMaids();
-                string path = GameMainMakeSavePathFileName(__instance, f_nSaveNo);
-                string xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+				var path = GameMainMakeSavePathFileName(__instance, f_nSaveNo);
+				var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
                 PluginSettings.Save(xmlFilePath, path);
             }
             catch (Exception e)
@@ -492,7 +487,7 @@ namespace CM3D2.ExternalSaveData.Managed
         {
             try
             {
-                string xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+				var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
                 if (File.Exists(xmlFilePath))
                 {
                     File.Delete(xmlFilePath);
@@ -507,22 +502,22 @@ namespace CM3D2.ExternalSaveData.Managed
 
     internal class SaveDataPluginSettings
     {
-        internal SaveData saveData = new SaveData();
+        internal SaveData saveData = new();
         public const string GlobalMaidGuid = "global";
 
         public SaveDataPluginSettings Load(string xmlFilePath)
         {
-            XmlDocument xml = Helper.LoadXmlDocument(xmlFilePath);
+			var xml = Helper.LoadXmlDocument(xmlFilePath);
             saveData = (new SaveData()).Load(xml.SelectSingleNode("/savedata"));
             return this;
         }
 
         public void Save(string xmlFilePath, string targetSaveDataFileName)
         {
-            XmlDocument xml = Helper.LoadXmlDocument(xmlFilePath);
+			var xml = Helper.LoadXmlDocument(xmlFilePath);
             saveData.target = targetSaveDataFileName;
 
-            XmlNode xmlSaveData = SelectOrAppendNode(xml, "savedata", "savedata");
+			var xmlSaveData = SelectOrAppendNode(xml, "savedata", "savedata");
             saveData.Save(xmlSaveData);
             xml.Save(xmlFilePath);
         }
@@ -547,10 +542,7 @@ namespace CM3D2.ExternalSaveData.Managed
             return saveData.Remove(guid, pluginName, propName);
         }
 
-        public bool ContainsMaid(string guid)
-        {
-            return saveData.ContainsMaid(guid);
-        }
+        public bool ContainsMaid(string guid) => saveData.ContainsMaid(guid);
 
         public void SetMaid(string guid, string lastName, string firstName, string createTime)
         {
@@ -579,7 +571,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public void Clear()
             {
-                maids = new Dictionary<string, Maid>();
+                maids = new();
                 SetMaid(GlobalMaidGuid, "", "", "");
             }
 
@@ -589,7 +581,7 @@ namespace CM3D2.ExternalSaveData.Managed
                 Clear();
                 foreach (XmlNode n in xmlNode.SelectNodes("maids/maid"))
                 {
-                    string a = GetAttribute(n, "guid");
+					var a = GetAttribute(n, "guid");
                     if (a != null)
                     {
                         maids[a] = (new Maid()).Load(n);
@@ -601,13 +593,13 @@ namespace CM3D2.ExternalSaveData.Managed
             public void Save(XmlNode xmlNode)
             {
                 SetAttribute(xmlNode, "target", target);
-                XmlNode xmlMaids = SelectOrAppendNode(xmlNode, "maids", "maids");
+				var xmlMaids = SelectOrAppendNode(xmlNode, "maids", "maids");
 
                 // 存在しない<maid>を削除
                 foreach (XmlNode n in xmlMaids.SelectNodes("maid"))
                 {
-                    bool bRemove = true;
-                    string guid = GetAttribute(n, "guid");
+					var bRemove = true;
+					var guid = GetAttribute(n, "guid");
                     if (guid != null)
                     {
                         if (maids.ContainsKey(guid))
@@ -623,7 +615,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
                 foreach (var kv in maids.OrderBy(kv => kv.Key).ToDictionary(kv => kv.Key, kv => kv.Value))
                 {
-                    XmlNode n = SelectOrAppendNode(xmlMaids, string.Format("maid[@guid='{0}']", kv.Key), "maid");
+					var n = SelectOrAppendNode(xmlMaids, string.Format("maid[@guid='{0}']", kv.Key), "maid");
                     kv.Value.Save(n);
                 }
             }
@@ -635,8 +627,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             Maid TryGetValue(string guid)
             {
-                Maid maid;
-                if (maids.TryGetValue(guid, out maid))
+                if (maids.TryGetValue(guid, out var maid))
                 {
                     return maid;
                 }
@@ -645,10 +636,10 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public void SetMaid(string guid, string lastName, string firstName, string createTime)
             {
-                Maid maid = TryGetValue(guid);
+				var maid = TryGetValue(guid);
                 if (maid == null)
                 {
-                    maid = new Maid();
+                    maid = new();
                     maids[guid] = maid;
                 }
                 maid.SetMaid(guid, lastName, firstName, createTime);
@@ -656,7 +647,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public bool SetMaidName(string guid, string lastName, string firstName, string createTime)
             {
-                Maid maid = TryGetValue(guid);
+				var maid = TryGetValue(guid);
                 if (maid == null)
                 {
                     return false;
@@ -664,14 +655,11 @@ namespace CM3D2.ExternalSaveData.Managed
                 return maid.SetMaidName(lastName, firstName, createTime);
             }
 
-            public bool ContainsMaid(string guid)
-            {
-                return maids.ContainsKey(guid);
-            }
+            public bool ContainsMaid(string guid) => maids.ContainsKey(guid);
 
             public bool Contains(string guid, string pluginName, string propName)
             {
-                Maid maid = TryGetValue(guid);
+				var maid = TryGetValue(guid);
                 if (maid == null)
                 {
                     return false;
@@ -681,7 +669,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public string Get(string guid, string pluginName, string propName, string defaultValue)
             {
-                Maid maid = TryGetValue(guid);
+				var maid = TryGetValue(guid);
                 if (maid == null)
                 {
                     return defaultValue;
@@ -691,7 +679,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public bool Set(string guid, string pluginName, string propName, string value)
             {
-                Maid maid = TryGetValue(guid);
+				var maid = TryGetValue(guid);
                 if (maid == null)
                 {
                     return false;
@@ -701,7 +689,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public bool Remove(string guid, string pluginName, string propName)
             {
-                Maid maid = TryGetValue(guid);
+				var maid = TryGetValue(guid);
                 if (maid == null)
                 {
                     return false;
@@ -716,7 +704,7 @@ namespace CM3D2.ExternalSaveData.Managed
             string lastname;
             string firstname;
             string createtime;
-            internal Dictionary<string, Plugin> plugins = new Dictionary<string, Plugin>();
+            internal Dictionary<string, Plugin> plugins = new();
 
             public Maid Load(XmlNode xmlNode)
             {
@@ -724,11 +712,11 @@ namespace CM3D2.ExternalSaveData.Managed
                 lastname = GetAttribute(xmlNode, "lastname");
                 firstname = GetAttribute(xmlNode, "firstname");
                 createtime = GetAttribute(xmlNode, "createtime");
-                plugins = new Dictionary<string, Plugin>();
+                plugins = new();
 
                 foreach (XmlNode n in xmlNode.SelectNodes("plugins/plugin"))
                 {
-                    string name = GetAttribute(n, "name");
+					var name = GetAttribute(n, "name");
                     if (name != null)
                     {
                         plugins[name] = (new Plugin()).Load(n);
@@ -744,11 +732,11 @@ namespace CM3D2.ExternalSaveData.Managed
                 SetAttribute(xmlNode, "firstname", firstname);
                 SetAttribute(xmlNode, "createtime", createtime);
 
-                XmlNode xmlPlugins = SelectOrAppendNode(xmlNode, "plugins", null);
+				var xmlPlugins = SelectOrAppendNode(xmlNode, "plugins", null);
                 foreach (var kv in plugins)
                 {
-                    string path = string.Format("plugin[@name='{0}']", kv.Key);
-                    XmlNode n = xmlPlugins.SelectSingleNode(path);
+					var path = string.Format("plugin[@name='{0}']", kv.Key);
+					var n = xmlPlugins.SelectSingleNode(path);
                     if (n == null)
                     {
                         n = SelectOrAppendNode(xmlPlugins, path, "plugin");
@@ -767,7 +755,7 @@ namespace CM3D2.ExternalSaveData.Managed
                 this.firstname = firstName;
                 this.createtime = createTime;
                 this.guid = guid;
-                this.plugins = new Dictionary<string, Plugin>();
+                this.plugins = new();
             }
 
             public bool SetMaidName(string lastName, string firstName, string createTime)
@@ -780,8 +768,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             Plugin TryGetValue(string pluginName)
             {
-                Plugin plugin;
-                if (plugins.TryGetValue(pluginName, out plugin))
+                if (plugins.TryGetValue(pluginName, out var plugin))
                 {
                     return plugin;
                 }
@@ -790,7 +777,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public bool Contains(string pluginName, string propName)
             {
-                Plugin plugin = TryGetValue(pluginName);
+				var plugin = TryGetValue(pluginName);
                 if (plugin == null)
                 {
                     return false;
@@ -800,7 +787,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public string Get(string pluginName, string propName, string defaultValue)
             {
-                Plugin plugin = TryGetValue(pluginName);
+				var plugin = TryGetValue(pluginName);
                 if (plugin == null)
                 {
                     return defaultValue;
@@ -810,10 +797,10 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public bool Set(string pluginName, string propName, string value)
             {
-                Plugin plugin = TryGetValue(pluginName);
+				var plugin = TryGetValue(pluginName);
                 if (plugin == null)
                 {
-                    plugin = new Plugin() { name = pluginName };
+                    plugin = new() { name = pluginName };
                     plugins[pluginName] = plugin;
                 }
                 return plugin.Set(propName, value);
@@ -821,7 +808,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public bool Remove(string pluginName, string propName)
             {
-                Plugin plugin = TryGetValue(pluginName);
+				var plugin = TryGetValue(pluginName);
                 if (plugin == null)
                 {
                     return false;
@@ -833,12 +820,12 @@ namespace CM3D2.ExternalSaveData.Managed
         public class Plugin
         {
             public string name;
-            public Dictionary<string, string> props = new Dictionary<string, string>();
+            public Dictionary<string, string> props = new();
 
             public Plugin Load(XmlNode xmlNode)
             {
                 name = GetAttribute(xmlNode, "name");
-                props = new Dictionary<string, string>();
+                props = new();
                 foreach (XmlNode e in xmlNode.SelectNodes("prop"))
                 {
                     props[GetAttribute(e, "name")] = GetAttribute(e, "value");
@@ -851,21 +838,17 @@ namespace CM3D2.ExternalSaveData.Managed
                 SetAttribute(xmlNode, "name", name);
                 foreach (var kv in props)
                 {
-                    XmlNode n = SelectOrAppendNode(xmlNode, string.Format("prop[@name='{0}']", kv.Key), "prop");
+					var n = SelectOrAppendNode(xmlNode, string.Format("prop[@name='{0}']", kv.Key), "prop");
                     SetAttribute(n, "name", kv.Key);
                     SetAttribute(n, "value", kv.Value);
                 }
             }
 
-            public bool Contains(string propName)
-            {
-                return props.ContainsKey(propName);
-            }
+            public bool Contains(string propName) => props.ContainsKey(propName);
 
             public string Get(string propName, string defaultValue)
             {
-                string value;
-                if (!props.TryGetValue(propName, out value))
+                if (!props.TryGetValue(propName, out var value))
                 {
                     value = defaultValue;
                 }
@@ -880,7 +863,7 @@ namespace CM3D2.ExternalSaveData.Managed
 
             public bool Remove(string propName)
             {
-                bool b = props.Remove(propName);
+				var b = props.Remove(propName);
                 return b;
             }
         }
@@ -892,18 +875,15 @@ namespace CM3D2.ExternalSaveData.Managed
                 return null;
             }
 
-            if (prefix == null)
-            {
-                prefix = path;
-            }
+            prefix ??= path;
 
-            XmlNode n = xmlNode.SelectSingleNode(path);
+			var n = xmlNode.SelectSingleNode(path);
             if (n == null)
             {
-                XmlDocument od = xmlNode.OwnerDocument;
-                if (xmlNode is XmlDocument)
+				var od = xmlNode.OwnerDocument;
+                if (xmlNode is XmlDocument document)
                 {
-                    od = (XmlDocument)xmlNode;
+                    od = document;
                 }
                 if (od == null)
                 {
@@ -921,11 +901,7 @@ namespace CM3D2.ExternalSaveData.Managed
                 return null;
             }
             var a = xmlNode.Attributes[name];
-            if (a == null)
-            {
-                return null;
-            }
-            return a.Value;
+            return a?.Value;
         }
 
         static void SetAttribute(XmlNode xmlNode, string name, string value)
