@@ -377,7 +377,7 @@ public static class ExSaveData {
 				PluginSettings.Load(xmlFilePath);
 			}
 		} catch (Exception e) {
-			Helper.ShowException(e);
+			MaidVoicePitch.Plugin.MaidVoicePitch.LogError(e);
 		}
 	}
 
@@ -395,7 +395,7 @@ public static class ExSaveData {
 			var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
 			PluginSettings.Save(xmlFilePath, path);
 		} catch (Exception e) {
-			Helper.ShowException(e);
+			MaidVoicePitch.Plugin.MaidVoicePitch.LogError(e);
 		}
 	}
 
@@ -408,7 +408,7 @@ public static class ExSaveData {
 				File.Delete(xmlFilePath);
 			}
 		} catch (Exception e) {
-			Helper.ShowException(e);
+			MaidVoicePitch.Plugin.MaidVoicePitch.LogError(e);
 		}
 	}
 }

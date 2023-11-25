@@ -2,7 +2,6 @@ using System.IO;
 using System.Xml;
 using CM3D2.ExternalSaveData.Managed;
 using HarmonyLib;
-using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
@@ -47,7 +46,7 @@ public static class ExPreset {
 		// 通知先がエディットシーン以外で通知されるとエラーが出る場合があるためひとまずエディットシーンの実通知するようにする
 		// シーン拡張は要相談
 		if (SceneManager.GetActiveScene().name == "SceneEdit") {
-			Debug.Log("Notify");
+			MaidVoicePitch.Plugin.MaidVoicePitch.LogDebug("Notify");
 			loadNotify.Invoke();
 		}
 	}
