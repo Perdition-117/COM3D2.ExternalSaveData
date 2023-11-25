@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Xml;
 using HarmonyLib;
 using UnityEngine;
@@ -415,15 +414,7 @@ namespace CM3D2.ExternalSaveData.Managed
         /// <returns>セーブデータのファイル名</returns>
         public static string GameMainMakeSavePathFileName(GameMain that, int f_nSaveNo)
         {
-            // class GameMain { private string MakeSavePathFileName(int f_nSaveNo); }
-            MethodInfo methodInfo = typeof(GameMain).GetMethod(
-                "MakeSavePathFileName",
-                BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance,
-                null,
-                new Type[] { typeof(int) },
-                null
-            );
-            return (string)(methodInfo.Invoke(that, new object[] { f_nSaveNo }));
+            return that.MakeSavePathFileName(f_nSaveNo);
         }
 
         static bool SetMaidName(Maid maid)
