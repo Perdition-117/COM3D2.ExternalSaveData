@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using HarmonyLib;
-using UnityEngine;
 
 namespace CM3D2.ExternalSaveData.Managed;
 
@@ -37,7 +36,7 @@ public static class ExSaveData {
 			if (m.plugins.TryGetValue(pluginName, out var plugin)) {
 				plugin.Load(xmlNode);
 			} else {
-				m.plugins[pluginName] = (new SaveDataPluginSettings.Plugin()).Load(xmlNode);
+				m.plugins[pluginName] = new SaveDataPluginSettings.Plugin().Load(xmlNode);
 			}
 		}
 	}
@@ -95,10 +94,8 @@ public static class ExSaveData {
 		if (!Contains(maid)) {
 			SetMaid(maid);
 		}
-		if (!overwrite) {
-			if (Contains(maid, pluginName, propName)) {
-				return false;
-			}
+		if (!overwrite && Contains(maid, pluginName, propName)) {
+			return false;
 		}
 		return PluginSettings.Set(maid.status.guid, pluginName, propName, value);
 	}
@@ -259,10 +256,8 @@ public static class ExSaveData {
 		if (pluginName == null || propName == null) {
 			return false;
 		}
-		if (!overwrite) {
-			if (GlobalContains(pluginName, propName)) {
-				return false;
-			}
+		if (!overwrite && GlobalContains(pluginName, propName)) {
+			return false;
 		}
 		return PluginSettings.Set(SaveDataPluginSettings.GlobalMaidGuid, pluginName, propName, value);
 	}
@@ -427,7 +422,7 @@ internal class SaveDataPluginSettings {
 
 	public SaveDataPluginSettings Load(string xmlFilePath) {
 		var xml = Helper.LoadXmlDocument(xmlFilePath);
-		saveData = (new SaveData()).Load(xml.SelectSingleNode("/savedata"));
+		saveData = new SaveData().Load(xml.SelectSingleNode("/savedata"));
 		return this;
 	}
 
@@ -489,7 +484,7 @@ internal class SaveDataPluginSettings {
 			foreach (XmlNode n in xmlNode.SelectNodes("maids/maid")) {
 				var a = GetAttribute(n, "guid");
 				if (a != null) {
-					maids[a] = (new Maid()).Load(n);
+					maids[a] = new Maid().Load(n);
 				}
 			}
 			return this;
@@ -503,10 +498,8 @@ internal class SaveDataPluginSettings {
 			foreach (XmlNode n in xmlMaids.SelectNodes("maid")) {
 				var bRemove = true;
 				var guid = GetAttribute(n, "guid");
-				if (guid != null) {
-					if (maids.ContainsKey(guid)) {
-						bRemove = false;
-					}
+				if (guid != null && maids.ContainsKey(guid)) {
+					bRemove = false;
 				}
 				if (bRemove) {
 					xmlMaids.RemoveChild(n);
@@ -599,7 +592,7 @@ internal class SaveDataPluginSettings {
 			foreach (XmlNode n in xmlNode.SelectNodes("plugins/plugin")) {
 				var name = GetAttribute(n, "name");
 				if (name != null) {
-					plugins[name] = (new Plugin()).Load(n);
+					plugins[name] = new Plugin().Load(n);
 				}
 			}
 			return this;

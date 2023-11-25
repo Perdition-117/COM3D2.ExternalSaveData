@@ -1,12 +1,9 @@
-using CM3D2.ExternalPreset.Managed;
-using HarmonyLib;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using UnityEngine;
+using CM3D2.ExternalPreset.Managed;
+using HarmonyLib;
 
 namespace CM3D2.ExternalPreset.Patcher;
 
