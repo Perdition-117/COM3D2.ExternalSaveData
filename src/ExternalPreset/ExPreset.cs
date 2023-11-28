@@ -20,15 +20,18 @@ public static class ExPreset {
 	}
 
 	private static void PluginsLoad(Maid maid, CharacterMgr.Preset preset) {
-		XmlDocument xml;
+		XmlDocument xml = null;
 
-		string fileName;
 		if (preset.strFileName == "") {
 			xml = _xmlMemory;
 			_xmlMemory = null;
 		} else {
-			fileName = preset.strFileName + ".expreset.xml";
-			xml = LoadExFile(preset.strFileName + ".expreset.xml");
+			var exPresetPath = GetExPresetPath(preset.strFileName);
+
+			if (File.Exists(exPresetPath)) {
+				xml = new XmlDocument();
+				xml.Load(exPresetPath);
+			}
 		}
 
 		if (xml == null) {
@@ -51,39 +54,32 @@ public static class ExPreset {
 		}
 	}
 
-	private static XmlDocument LoadExFile(string fileName) {
-		// Presetフォルダチェック
-		var path = FindEXPresetFilePath(fileName);
-		// expresetファイルがなければ終了
-		if (path == null) {
-			return null;
+	private static bool TryGetExternalSaveData(Maid maid, CharacterMgr.PresetType presetType, out XmlDocument xmlDocument) {
+		xmlDocument = null;
+
+		if (presetType == CharacterMgr.PresetType.Wear) {
+			return false;
 		}
 
-		var xml = new XmlDocument();
-		xml.Load(path);
+		xmlDocument = new XmlDocument();
+		var rootNode = xmlDocument.AppendChild(xmlDocument.CreateElement("plugins"));
+		var hasNodes = false;
 
-		return xml;
+		foreach (var pluginName in ExternalSaveDataNodes) {
+			var node = xmlDocument.CreateElement("plugin");
+			if (ExSaveData.TryGetXml(maid, pluginName, node)) {
+				rootNode.AppendChild(node);
+				hasNodes = true;
+			}
+		}
+
+		return hasNodes;
 	}
 
 	[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetSaveNotWriteFile))]
 	[HarmonyPostfix]
 	public static void PostCharacterMgrPresetSaveNotWriteFile(CharacterMgr __instance, Maid f_maid, CharacterMgr.PresetType f_type) {
-		if (f_type == CharacterMgr.PresetType.Wear) {
-			return;
-		}
-
-		var xml = new XmlDocument();
-		var nodeExist = false;
-		var rootNode = xml.AppendChild(xml.CreateElement("plugins"));
-		foreach (var pluginName in ExternalSaveDataNodes) {
-			var node = xml.CreateElement("plugin");
-			if (ExSaveData.TryGetXml(f_maid, pluginName, node)) {
-				rootNode.AppendChild(node);
-				nodeExist = true;
-			}
-		}
-
-		if (nodeExist) {
+		if (TryGetExternalSaveData(f_maid, f_type, out var xml)) {
 			_xmlMemory = xml;
 		}
 	}
@@ -94,41 +90,20 @@ public static class ExPreset {
 	}
 
 	private static void PluginsSave(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
-		if (presetType == CharacterMgr.PresetType.Wear) {
-			return;
+		if (TryGetExternalSaveData(maid, presetType, out var xml)) {
+			xml.Save(GetExPresetPath(presetFileName));
 		}
-
-		var xml = new XmlDocument();
-		var hasNodes = false;
-		var rootNode = xml.AppendChild(xml.CreateElement("plugins"));
-		foreach (var pluginName in ExternalSaveDataNodes) {
-			var node = xml.CreateElement("plugin");
-			if (ExSaveData.TryGetXml(maid, pluginName, node)) {
-				rootNode.AppendChild(node);
-				hasNodes = true;
-			}
-		}
-
-		if (!hasNodes) {
-			return;
-		}
-		xml.Save($"{Path.GetFullPath(".\\")}Preset\\{presetFileName}.expreset.xml");
 	}
 
 	public static void Delete(CharacterMgr.Preset preset) {
-		var path = $"{Path.GetFullPath(".\\")}Preset\\{preset.strFileName}.expreset.xml";
-		if (File.Exists(path)) {
-			File.Delete(path);
+		var exPresetPath = GetExPresetPath(preset.strFileName);
+		if (File.Exists(exPresetPath)) {
+			File.Delete(exPresetPath);
 		}
 	}
 
-	private static string FindEXPresetFilePath(string presetFileName) {
-		// Presetフォルダチェック
-		var path = $"{Path.GetFullPath(".\\")}Preset\\{presetFileName}";
-		if (File.Exists(path)) {
-			return path;
-		}
-		return null;
+	private static string GetExPresetPath(string presetFileName) {
+		return Path.Combine(GameMain.Instance.CharacterMgr.PresetDirectory, $"{presetFileName}.expreset.xml");
 	}
 
 	// EXSaveDataに保存する情報のうち、EXプリセットにもセーブするノード名を設定
