@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace CM3D2.ExternalSaveData.Managed;
@@ -9,18 +10,26 @@ internal class SaveDataPluginSettings {
 	internal SaveData saveData = new();
 
 	public SaveDataPluginSettings Load(string xmlFilePath) {
-		var xml = Helper.LoadXmlDocument(xmlFilePath);
+		var xml = LoadXmlDocument(xmlFilePath);
 		saveData = new SaveData().Load(xml.SelectSingleNode("/savedata"));
 		return this;
 	}
 
 	public void Save(string xmlFilePath, string targetSaveDataFileName) {
-		var xml = Helper.LoadXmlDocument(xmlFilePath);
+		var xml = LoadXmlDocument(xmlFilePath);
 		saveData.SaveFileName = targetSaveDataFileName;
 
 		var xmlSaveData = SelectOrAppendNode(xml, "savedata", "savedata");
 		saveData.Save(xmlSaveData);
 		xml.Save(xmlFilePath);
+	}
+
+	private static XmlDocument LoadXmlDocument(string xmlFilePath) {
+		var xml = new XmlDocument();
+		if (File.Exists(xmlFilePath)) {
+			xml.Load(xmlFilePath);
+		}
+		return xml;
 	}
 
 	public bool Contains(string guid, string pluginName, string propName) {

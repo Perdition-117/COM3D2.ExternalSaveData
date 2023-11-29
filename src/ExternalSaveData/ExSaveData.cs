@@ -60,16 +60,40 @@ public static class ExSaveData {
 		return PluginSettings.Get(maid.status.guid, pluginName, propName, defaultValue);
 	}
 
+	private static bool StringToBool(string s, bool defaultValue) {
+		if (s == null) {
+			return defaultValue;
+		}
+		if (bool.TryParse(s, out var v)) {
+			return v;
+		}
+		if (float.TryParse(s, out var f)) {
+			return f > 0.5f;
+		}
+		if (int.TryParse(s, out var i)) {
+			return i > 0;
+		}
+		return defaultValue;
+	}
+
+	private static int StringToInt(string s, int defaultValue) {
+		return s != null && int.TryParse(s, out var v) ? v : defaultValue;
+	}
+
+	private static float StringToFloat(string s, float defaultValue) {
+		return s != null && float.TryParse(s, out var v) ? v : defaultValue;
+	}
+
 	public static bool GetBool(Maid maid, string pluginName, string propName, bool defaultValue) {
-		return Helper.StringToBool(Get(maid, pluginName, propName, null), defaultValue);
+		return StringToBool(Get(maid, pluginName, propName, null), defaultValue);
 	}
 
 	public static int GetInt(Maid maid, string pluginName, string propName, int defaultValue) {
-		return Helper.StringToInt(Get(maid, pluginName, propName, null), defaultValue);
+		return StringToInt(Get(maid, pluginName, propName, null), defaultValue);
 	}
 
 	public static float GetFloat(Maid maid, string pluginName, string propName, float defaultValue) {
-		return Helper.StringToFloat(Get(maid, pluginName, propName, null), defaultValue);
+		return StringToFloat(Get(maid, pluginName, propName, null), defaultValue);
 	}
 
 	/// <summary>
@@ -227,15 +251,15 @@ public static class ExSaveData {
 	}
 
 	public static bool GlobalGetBool(string pluginName, string propName, bool defaultValue) {
-		return Helper.StringToBool(GlobalGet(pluginName, propName, null), defaultValue);
+		return StringToBool(GlobalGet(pluginName, propName, null), defaultValue);
 	}
 
 	public static int GlobalGetInt(string pluginName, string propName, int defaultValue) {
-		return Helper.StringToInt(GlobalGet(pluginName, propName, null), defaultValue);
+		return StringToInt(GlobalGet(pluginName, propName, null), defaultValue);
 	}
 
 	public static float GlobalGetFloat(string pluginName, string propName, float defaultValue) {
-		return Helper.StringToFloat(GlobalGet(pluginName, propName, null), defaultValue);
+		return StringToFloat(GlobalGet(pluginName, propName, null), defaultValue);
 	}
 
 	/// <summary>
@@ -370,45 +394,33 @@ public static class ExSaveData {
 	[HarmonyPatch(typeof(GameMain), nameof(GameMain.Deserialize))]
 	[HarmonyPostfix]
 	private static void OnDeserialize(GameMain __instance, int f_nSaveNo) {
-		try {
-			var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
-			saveDataPluginSettings = new();
-			if (File.Exists(xmlFilePath)) {
-				PluginSettings.Load(xmlFilePath);
-			}
-		} catch (Exception e) {
-			MaidVoicePitch.Plugin.MaidVoicePitch.LogError(e);
+		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+		saveDataPluginSettings = new();
+		if (File.Exists(xmlFilePath)) {
+			PluginSettings.Load(xmlFilePath);
 		}
 	}
 
 	[HarmonyPatch(typeof(GameMain), nameof(GameMain.Serialize))]
 	[HarmonyPostfix]
 	private static void OnSerialize(GameMain __instance, int f_nSaveNo, string f_strComment) {
-		try {
-			var cm = GameMain.Instance.CharacterMgr;
-			for (var i = 0; i < cm.GetStockMaidCount(); i++) {
-				var maid = cm.GetStockMaid(i);
-				SetMaidName(maid);
-			}
-			CleanupMaids();
-			var path = GameMainMakeSavePathFileName(__instance, f_nSaveNo);
-			var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
-			PluginSettings.Save(xmlFilePath, path);
-		} catch (Exception e) {
-			MaidVoicePitch.Plugin.MaidVoicePitch.LogError(e);
+		var cm = GameMain.Instance.CharacterMgr;
+		for (var i = 0; i < cm.GetStockMaidCount(); i++) {
+			var maid = cm.GetStockMaid(i);
+			SetMaidName(maid);
 		}
+		CleanupMaids();
+		var path = GameMainMakeSavePathFileName(__instance, f_nSaveNo);
+		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+		PluginSettings.Save(xmlFilePath, path);
 	}
 
 	[HarmonyPatch(typeof(GameMain), nameof(GameMain.DeleteSerializeData))]
 	[HarmonyPostfix]
 	private static void OnDeleteSerializeData(GameMain __instance, int f_nSaveNo) {
-		try {
-			var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
-			if (File.Exists(xmlFilePath)) {
-				File.Delete(xmlFilePath);
-			}
-		} catch (Exception e) {
-			MaidVoicePitch.Plugin.MaidVoicePitch.LogError(e);
+		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+		if (File.Exists(xmlFilePath)) {
+			File.Delete(xmlFilePath);
 		}
 	}
 }
