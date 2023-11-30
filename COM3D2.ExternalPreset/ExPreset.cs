@@ -16,6 +16,9 @@ namespace CM3D2.ExternalPreset.Managed;
 public class ExPreset : BaseUnityPlugin {
 	private static readonly HashSet<string> ExternalSaveDataNodes = new();
 
+	// backwards compatibility with AutoConverter
+	private static readonly HashSet<string> exsaveNodeNameMap = ExternalSaveDataNodes;
+
 	private static XmlDocument _xmlMemory = null;
 
 	// プリセット適用時に通知が必要な場合はここに登録
