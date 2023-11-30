@@ -1,6 +1,4 @@
-﻿using System.IO;
 using System.Linq;
-using System.Xml;
 
 namespace CM3D2.ExternalSaveData.Managed;
 

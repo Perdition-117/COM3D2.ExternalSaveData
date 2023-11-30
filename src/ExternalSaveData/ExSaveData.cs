@@ -1,10 +1,11 @@
-using System.IO;
-using System.Xml;
+using BepInEx;
+using CM3D2.ExternalPreset.Patcher;
 using HarmonyLib;
 
 namespace CM3D2.ExternalSaveData.Managed;
 
-public static class ExSaveData {
+[BepInPlugin("CM3D2.ExternalSaveData", "ExternalSaveData", "0.1.5")]
+public class ExSaveData : BaseUnityPlugin {
 	private static SaveDataPluginSettings saveDataPluginSettings = new();
 
 	// 拡張セーブデータの実体
@@ -13,6 +14,11 @@ public static class ExSaveData {
 	// 通常のプラグイン名よりも前に処理するため、先頭に '.' をつけている。
 	// 通常のプラグインは "CM3D2～" のように英数字から始まる名前をつけること
 	private const string CallbackName = ".CM3D2 ExternalSaveData";
+
+	private void Awake() {
+		Harmony.CreateAndPatchAll(typeof(ExSaveData));
+		Harmony.CreateAndPatchAll(typeof(ExternalPresetPatch));
+	}
 
 	public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode) {
 		if (PluginSettings.saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
