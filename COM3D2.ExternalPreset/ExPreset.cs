@@ -1,5 +1,9 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Xml;
+using BepInEx;
+using BepInEx.Logging;
+using CM3D2.ExternalPreset.Patcher;
 using CM3D2.ExternalSaveData.Managed;
 using HarmonyLib;
 using UnityEngine.Events;
@@ -7,13 +11,23 @@ using UnityEngine.SceneManagement;
 
 namespace CM3D2.ExternalPreset.Managed;
 
-public static class ExPreset {
+[BepInPlugin("CM3D2.ExternalPreset", "ExternalPreset", "0.1.5")]
+[BepInDependency("CM3D2.ExternalSaveData")]
+public class ExPreset : BaseUnityPlugin {
 	private static readonly HashSet<string> ExternalSaveDataNodes = new();
 
 	private static XmlDocument _xmlMemory = null;
 
 	// プリセット適用時に通知が必要な場合はここに登録
 	public static UnityEvent loadNotify = new();
+
+	private static ManualLogSource _logger;
+
+	private void Awake() {
+		_logger = Logger;
+
+		Harmony.CreateAndPatchAll(typeof(ExternalPresetPatch));
+	}
 
 	public static void Load(Maid maid, CharacterMgr.Preset preset) {
 		PluginsLoad(maid, preset);
@@ -49,7 +63,7 @@ public static class ExPreset {
 		// 通知先がエディットシーン以外で通知されるとエラーが出る場合があるためひとまずエディットシーンの実通知するようにする
 		// シーン拡張は要相談
 		if (SceneManager.GetActiveScene().name == "SceneEdit") {
-			MaidVoicePitch.Plugin.MaidVoicePitch.LogDebug("Notify");
+			_logger.LogDebug("Notify");
 			loadNotify.Invoke();
 		}
 	}

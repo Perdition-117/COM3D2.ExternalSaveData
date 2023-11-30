@@ -1,5 +1,4 @@
 using BepInEx;
-using CM3D2.ExternalPreset.Patcher;
 using HarmonyLib;
 
 namespace CM3D2.ExternalSaveData.Managed;
@@ -17,7 +16,6 @@ public class ExSaveData : BaseUnityPlugin {
 
 	private void Awake() {
 		Harmony.CreateAndPatchAll(typeof(ExSaveData));
-		Harmony.CreateAndPatchAll(typeof(ExternalPresetPatch));
 	}
 
 	public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode) {
