@@ -17,7 +17,7 @@ internal class SaveDataPluginSettings {
 		var xml = LoadXmlDocument(xmlFilePath);
 		saveData.SaveFileName = targetSaveDataFileName;
 
-		var xmlSaveData = SelectOrAppendNode(xml, "savedata", "savedata");
+		var xmlSaveData = xml.SelectOrAppendNode("savedata", "savedata");
 		saveData.Save(xmlSaveData);
 		xml.Save(xmlFilePath);
 	}
@@ -77,9 +77,9 @@ internal class SaveDataPluginSettings {
 		public SaveData Load(XmlNode xmlNode) {
 			SaveFileName = GetAttribute(xmlNode, "target");
 			Clear();
+
 			foreach (XmlNode node in xmlNode.SelectNodes("maids/maid")) {
-				var guid = GetAttribute(node, "guid");
-				if (guid != null) {
+				if (node.TryGetAttribute("guid", out var guid)) {
 					Maids[guid] = new Maid().Load(node);
 				}
 			}
@@ -88,22 +88,17 @@ internal class SaveDataPluginSettings {
 
 		public void Save(XmlNode xmlNode) {
 			SetAttribute(xmlNode, "target", SaveFileName);
-			var xmlMaids = SelectOrAppendNode(xmlNode, "maids", "maids");
+			var xmlMaids = xmlNode.SelectOrAppendNode("maids", "maids");
 
 			// 存在しない<maid>を削除
 			foreach (XmlNode node in xmlMaids.SelectNodes("maid")) {
-				var bRemove = true;
-				var guid = GetAttribute(node, "guid");
-				if (guid != null && Maids.ContainsKey(guid)) {
-					bRemove = false;
-				}
-				if (bRemove) {
+				if (!(node.TryGetAttribute("guid", out var guid) && Maids.ContainsKey(guid))) {
 					xmlMaids.RemoveChild(node);
 				}
 			}
 
 			foreach (var kv in Maids.OrderBy(kv => kv.Key).ToDictionary(kv => kv.Key, kv => kv.Value)) {
-				var node = SelectOrAppendNode(xmlMaids, string.Format("maid[@guid='{0}']", kv.Key), "maid");
+				var node = xmlMaids.SelectOrAppendNode($"maid[@guid='{kv.Key}']", "maid");
 				kv.Value.Save(node);
 			}
 		}
@@ -112,16 +107,12 @@ internal class SaveDataPluginSettings {
 			Maids = Maids.Where(kv => guids.Contains(kv.Key) || kv.Key == GlobalMaidGuid).ToDictionary(kv => kv.Key, kv => kv.Value);
 		}
 
-		private Maid TryGetValue(string guid) {
-			if (Maids.TryGetValue(guid, out var maid)) {
-				return maid;
-			}
-			return null;
+		private bool TryGetValue(string guid, out Maid maid) {
+			return Maids.TryGetValue(guid, out maid);
 		}
 
 		public void SetMaid(string guid, string lastName, string firstName, string createTime) {
-			var maid = TryGetValue(guid);
-			if (maid == null) {
+			if (!TryGetValue(guid, out var maid)) {
 				maid = new();
 				Maids[guid] = maid;
 			}
@@ -129,45 +120,25 @@ internal class SaveDataPluginSettings {
 		}
 
 		public bool SetMaidName(string guid, string lastName, string firstName, string createTime) {
-			var maid = TryGetValue(guid);
-			if (maid == null) {
-				return false;
-			}
-			return maid.SetMaidName(lastName, firstName, createTime);
+			return TryGetValue(guid, out var maid) && maid.SetMaidName(lastName, firstName, createTime);
 		}
 
 		public bool ContainsMaid(string guid) => Maids.ContainsKey(guid);
 
 		public bool Contains(string guid, string pluginName, string propName) {
-			var maid = TryGetValue(guid);
-			if (maid == null) {
-				return false;
-			}
-			return maid.Contains(pluginName, propName);
+			return TryGetValue(guid, out var maid) && maid.Contains(pluginName, propName);
 		}
 
 		public string Get(string guid, string pluginName, string propName, string defaultValue) {
-			var maid = TryGetValue(guid);
-			if (maid == null) {
-				return defaultValue;
-			}
-			return maid.Get(pluginName, propName, defaultValue);
+			return TryGetValue(guid, out var maid) ? maid.Get(pluginName, propName, defaultValue) : defaultValue;
 		}
 
 		public bool Set(string guid, string pluginName, string propName, string value) {
-			var maid = TryGetValue(guid);
-			if (maid == null) {
-				return false;
-			}
-			return maid.Set(pluginName, propName, value);
+			return TryGetValue(guid, out var maid) && maid.Set(pluginName, propName, value);
 		}
 
 		public bool Remove(string guid, string pluginName, string propName) {
-			var maid = TryGetValue(guid);
-			if (maid == null) {
-				return false;
-			}
-			return maid.Remove(pluginName, propName);
+			return TryGetValue(guid, out var maid) && maid.Remove(pluginName, propName);
 		}
 	}
 
@@ -187,8 +158,7 @@ internal class SaveDataPluginSettings {
 			Plugins.Clear();
 
 			foreach (XmlNode node in xmlNode.SelectNodes("plugins/plugin")) {
-				var name = GetAttribute(node, "name");
-				if (name != null) {
+				if (node.TryGetAttribute("name", out var name)) {
 					Plugins[name] = new Plugin().Load(node);
 				}
 			}
@@ -202,12 +172,12 @@ internal class SaveDataPluginSettings {
 			SetAttribute(xmlNode, "firstname", _firstName);
 			SetAttribute(xmlNode, "createtime", _createdTime);
 
-			var xmlPlugins = SelectOrAppendNode(xmlNode, "plugins", null);
+			var xmlPlugins = xmlNode.SelectOrAppendNode("plugins", null);
 			foreach (var kv in Plugins) {
 				var path = $"plugin[@name='{kv.Key}']";
 				var node = xmlPlugins.SelectSingleNode(path);
 				if (node == null) {
-					node = SelectOrAppendNode(xmlPlugins, path, "plugin");
+					node = xmlPlugins.SelectOrAppendNode(path, "plugin");
 				} else {
 					node.RemoveAll();
 				}
@@ -230,32 +200,20 @@ internal class SaveDataPluginSettings {
 			return true;
 		}
 
-		private Plugin TryGetValue(string pluginName) {
-			if (Plugins.TryGetValue(pluginName, out var plugin)) {
-				return plugin;
-			}
-			return null;
+		private bool TryGetValue(string pluginName, out Plugin plugin) {
+			return Plugins.TryGetValue(pluginName, out plugin);
 		}
 
 		public bool Contains(string pluginName, string propName) {
-			var plugin = TryGetValue(pluginName);
-			if (plugin == null) {
-				return false;
-			}
-			return plugin.Contains(propName);
+			return TryGetValue(pluginName, out var plugin) && plugin.Contains(propName);
 		}
 
 		public string Get(string pluginName, string propName, string defaultValue) {
-			var plugin = TryGetValue(pluginName);
-			if (plugin == null) {
-				return defaultValue;
-			}
-			return plugin.Get(propName, defaultValue);
+			return TryGetValue(pluginName, out var plugin) ? plugin.Get(propName, defaultValue) : defaultValue;
 		}
 
 		public bool Set(string pluginName, string propName, string value) {
-			var plugin = TryGetValue(pluginName);
-			if (plugin == null) {
+			if (!TryGetValue(pluginName, out var plugin)) {
 				plugin = new() { name = pluginName };
 				Plugins[pluginName] = plugin;
 			}
@@ -263,11 +221,7 @@ internal class SaveDataPluginSettings {
 		}
 
 		public bool Remove(string pluginName, string propName) {
-			var plugin = TryGetValue(pluginName);
-			if (plugin == null) {
-				return false;
-			}
-			return plugin.Remove(propName);
+			return TryGetValue(pluginName, out var plugin) && plugin.Remove(propName);
 		}
 	}
 
@@ -287,7 +241,7 @@ internal class SaveDataPluginSettings {
 		public void Save(XmlNode xmlNode) {
 			SetAttribute(xmlNode, "name", name);
 			foreach (var kv in props) {
-				var node = SelectOrAppendNode(xmlNode, $"prop[@name='{kv.Key}']", "prop");
+				var node = xmlNode.SelectOrAppendNode($"prop[@name='{kv.Key}']", "prop");
 				SetAttribute(node, "name", kv.Key);
 				SetAttribute(node, "value", kv.Value);
 			}
@@ -296,10 +250,7 @@ internal class SaveDataPluginSettings {
 		public bool Contains(string propName) => props.ContainsKey(propName);
 
 		public string Get(string propName, string defaultValue) {
-			if (!props.TryGetValue(propName, out var value)) {
-				value = defaultValue;
-			}
-			return value;
+			return props.TryGetValue(propName, out var value) ? value : defaultValue;
 		}
 
 		public bool Set(string propName, string value) {
@@ -308,16 +259,31 @@ internal class SaveDataPluginSettings {
 		}
 
 		public bool Remove(string propName) {
-			var b = props.Remove(propName);
-			return b;
+			return props.Remove(propName);
 		}
 	}
 
-	private static XmlNode SelectOrAppendNode(XmlNode xmlNode, string path, string prefix) {
-		if (xmlNode == null) {
-			return null;
-		}
+	private static string GetAttribute(XmlNode xmlNode, string name) {
+		return xmlNode?.Attributes[name]?.Value;
+	}
 
+	private static void SetAttribute(XmlNode xmlNode, string name, string value) {
+		((XmlElement)xmlNode).SetAttribute(name, value);
+	}
+}
+
+static class XmlNodeExtensions {
+	public static bool TryGetAttribute(this XmlNode xmlNode, string name, out string value) {
+		var xmlElement = (XmlElement)xmlNode;
+		value = null;
+		if (xmlElement.HasAttribute(name)) {
+			value = xmlElement.GetAttribute(name);
+			return true;
+		}
+		return false;
+	}
+
+	public static XmlNode SelectOrAppendNode(this XmlNode xmlNode, string path, string prefix) {
 		prefix ??= path;
 
 		var node = xmlNode.SelectSingleNode(path);
@@ -332,13 +298,5 @@ internal class SaveDataPluginSettings {
 			node = xmlNode.AppendChild(ownerDocument.CreateElement(prefix));
 		}
 		return node;
-	}
-
-	private static string GetAttribute(XmlNode xmlNode, string name) {
-		return xmlNode?.Attributes[name]?.Value;
-	}
-
-	private static void SetAttribute(XmlNode xmlNode, string name, string value) {
-		((XmlElement)xmlNode).SetAttribute(name, value);
 	}
 }
