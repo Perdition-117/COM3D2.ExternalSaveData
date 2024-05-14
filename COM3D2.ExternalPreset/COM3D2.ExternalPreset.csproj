@@ -8,18 +8,24 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <Product>ExternalPresetData</Product>
+    <Version>0.5.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\COM3D2.ExternalSaveData\COM3D2.ExternalSaveData.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="BepInEx.BaseLib" Version="5.4.19" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
     <PackageReference Include="COM3D2.GameLibs" Version="2.25.2-r.0" />
     <PackageReference Include="HarmonyX" Version="2.10.0" />
     <PackageReference Include="UnityEngine" Version="5.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\COM3D2.ExternalSaveData\COM3D2.ExternalSaveData.csproj" />
   </ItemGroup>
 
 </Project>

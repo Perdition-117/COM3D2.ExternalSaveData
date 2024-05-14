@@ -1,9 +1,10 @@
 using BepInEx;
+using COM3D2.ExternalSaveData;
 using HarmonyLib;
 
 namespace CM3D2.ExternalSaveData.Managed;
 
-[BepInPlugin("CM3D2.ExternalSaveData", "ExternalSaveData", "0.1.5")]
+[BepInPlugin("COM3D2.ExternalSaveData", MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class ExSaveData : BaseUnityPlugin {
 	private static SaveDataPluginSettings saveDataPluginSettings = new();
 

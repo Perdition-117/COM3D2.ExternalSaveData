@@ -5,14 +5,15 @@ using BepInEx;
 using BepInEx.Logging;
 using CM3D2.ExternalPreset.Patcher;
 using CM3D2.ExternalSaveData.Managed;
+using COM3D2.ExternalPreset;
 using HarmonyLib;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 namespace CM3D2.ExternalPreset.Managed;
 
-[BepInPlugin("CM3D2.ExternalPreset", "ExternalPreset", "0.1.5")]
-[BepInDependency("CM3D2.ExternalSaveData")]
+[BepInPlugin("COM3D2.ExternalPresetData", MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+[BepInDependency("COM3D2.ExternalSaveData")]
 public class ExPreset : BaseUnityPlugin {
 	private static readonly HashSet<string> ExternalSaveDataNodes = new();
 
