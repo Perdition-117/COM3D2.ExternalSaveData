@@ -27,10 +27,10 @@ public static class ExternalPresetPatch {
 	[HarmonyTranspiler]
 	private static IEnumerable<CodeInstruction> PresetSave(IEnumerable<CodeInstruction> instructions) {
 		var codes = new List<CodeInstruction>(instructions);
-		var instructionIndex = codes.FindIndex(e => e.opcode == OpCodes.Stfld && (e.operand as FieldInfo).Name == nameof(CharacterMgr.Preset.strFileName));
+		var instructionIndex = codes.FindIndex(e => e.opcode == OpCodes.Stfld && (e.operand as FieldInfo) == AccessTools.Field(typeof(CharacterMgr.Preset), nameof(CharacterMgr.Preset.strFileName)));
 
 		var codeMatcher = new CodeMatcher(instructions);
-
+		
 		codeMatcher
 			.MatchEndForward(new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(File), nameof(File.WriteAllBytes))))
 			.Insert(
