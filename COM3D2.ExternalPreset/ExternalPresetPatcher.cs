@@ -2,10 +2,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
-using CM3D2.ExternalPreset.Managed;
 using HarmonyLib;
 
-namespace CM3D2.ExternalPreset.Patcher;
+namespace CM3D2.ExternalPreset.Managed;
 
 public static class ExternalPresetPatch {
 	[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetSet), typeof(Maid), typeof(CharacterMgr.Preset))]

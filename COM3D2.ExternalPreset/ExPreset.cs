@@ -3,7 +3,6 @@ using System.IO;
 using System.Xml;
 using BepInEx;
 using BepInEx.Logging;
-using CM3D2.ExternalPreset.Patcher;
 using CM3D2.ExternalSaveData.Managed;
 using COM3D2.ExternalPreset;
 using HarmonyLib;
