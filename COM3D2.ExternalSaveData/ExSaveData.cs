@@ -1,4 +1,6 @@
 using BepInEx;
+using BepInEx.Logging;
+using CM3D2.ExternalSaveData.Managed.GameMainCallbacks;
 using COM3D2.ExternalSaveData;
 using HarmonyLib;
 
@@ -12,8 +14,24 @@ public class ExSaveData : BaseUnityPlugin {
 	// 通常のプラグインは "CM3D2～" のように英数字から始まる名前をつけること
 	private const string CallbackName = ".CM3D2 ExternalSaveData";
 
+	private static ManualLogSource _logger;
+
 	private void Awake() {
+		_logger = Logger;
+
 		Harmony.CreateAndPatchAll(typeof(ExSaveData));
+
+		Harmony.CreateAndPatchAll(typeof(Deserialize));
+		Harmony.CreateAndPatchAll(typeof(Serialize));
+		Harmony.CreateAndPatchAll(typeof(DeleteSerializeData));
+
+		Deserialize.Callbacks.Add(CallbackName, OnDeserialize);
+		Serialize.Callbacks.Add(CallbackName, OnSerialize);
+		DeleteSerializeData.Callbacks.Add(CallbackName, OnDeleteSerializeData);
+	}
+
+	internal static void LogError(object data) {
+		_logger.LogError(data);
 	}
 
 	public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode) {
@@ -197,7 +215,7 @@ public class ExSaveData : BaseUnityPlugin {
 	/// <returns>true:指定したメイドが存在する。false:存在しない</returns>
 	public static bool Contains(Maid maid) {
 		return maid != null && _pluginSettings.ContainsMaid(maid.status.guid);
-		}
+	}
 
 	/// <summary>
 	/// 拡張セーブデータへメイドを追加
@@ -374,8 +392,8 @@ public class ExSaveData : BaseUnityPlugin {
 		return _pluginSettings.SetMaidName(status.guid, status.lastName, status.firstName, status.creationTime);
 	}
 
-	[HarmonyPatch(typeof(GameMain), nameof(GameMain.OnInitialize))]
 	[HarmonyPrefix]
+	[HarmonyPatch(typeof(GameMain), nameof(GameMain.OnInitialize))]
 	public static void DummyInitialize(GameMain __instance) {
 		// static class の生成を強要するためのダミーメソッド
 		//
@@ -390,8 +408,6 @@ public class ExSaveData : BaseUnityPlugin {
 		// 分かっていないのでとりあえずこのまま。
 	}
 
-	[HarmonyPatch(typeof(GameMain), nameof(GameMain.Deserialize))]
-	[HarmonyPostfix]
 	private static void OnDeserialize(GameMain __instance, int f_nSaveNo) {
 		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
 		_pluginSettings = new();
@@ -400,8 +416,6 @@ public class ExSaveData : BaseUnityPlugin {
 		}
 	}
 
-	[HarmonyPatch(typeof(GameMain), nameof(GameMain.Serialize))]
-	[HarmonyPostfix]
 	private static void OnSerialize(GameMain __instance, int f_nSaveNo, string f_strComment) {
 		var cm = GameMain.Instance.CharacterMgr;
 		for (var i = 0; i < cm.GetStockMaidCount(); i++) {
@@ -414,8 +428,6 @@ public class ExSaveData : BaseUnityPlugin {
 		_pluginSettings.Save(xmlFilePath, path);
 	}
 
-	[HarmonyPatch(typeof(GameMain), nameof(GameMain.DeleteSerializeData))]
-	[HarmonyPostfix]
 	private static void OnDeleteSerializeData(GameMain __instance, int f_nSaveNo) {
 		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
 		if (File.Exists(xmlFilePath)) {
