@@ -53,7 +53,7 @@ public class ExSaveData : BaseUnityPlugin {
 			if (maidSaveData.Plugins.TryGetValue(pluginName, out var plugin)) {
 				plugin.Load(xmlNode);
 			} else {
-				maidSaveData.Plugins[pluginName] = new SaveDataPluginSettings.Plugin().Load(xmlNode);
+				maidSaveData.Plugins[pluginName] = new ExternalPluginData().Load(xmlNode);
 			}
 		}
 	}
