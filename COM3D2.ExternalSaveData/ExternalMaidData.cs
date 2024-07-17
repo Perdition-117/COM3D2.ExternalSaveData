@@ -1,6 +1,8 @@
 namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalMaidData {
+	public const string GlobalMaidGuid = "global";
+
 	private string _guid;
 	private string _lastName;
 	private string _firstName;

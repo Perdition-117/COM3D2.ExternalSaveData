@@ -8,7 +8,7 @@ namespace CM3D2.ExternalSaveData.Managed;
 
 [BepInPlugin("COM3D2.ExternalSaveData", MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class ExSaveData : BaseUnityPlugin {
-	private static SaveDataPluginSettings _pluginSettings = new();
+	private static ExternalSaveData _saveData = new();
 
 	// 通常のプラグイン名よりも前に処理するため、先頭に '.' をつけている。
 	// 通常のプラグインは "CM3D2～" のように英数字から始まる名前をつけること
@@ -35,7 +35,7 @@ public class ExSaveData : BaseUnityPlugin {
 	}
 
 	public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode) {
-		if (_pluginSettings.saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
+		if (_saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
 			if (maidSaveData.Plugins.TryGetValue(pluginName, out var plugin)) {
 				plugin.Save(xmlNode);
 				return true;
@@ -49,7 +49,7 @@ public class ExSaveData : BaseUnityPlugin {
 			SetMaid(maid);
 		}
 
-		if (_pluginSettings.saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
+		if (_saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
 			if (maidSaveData.Plugins.TryGetValue(pluginName, out var plugin)) {
 				plugin.Load(xmlNode);
 			} else {
@@ -77,7 +77,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!Contains(maid)) {
 			SetMaid(maid);
 		}
-		return _pluginSettings.Get(maid.status.guid, pluginName, propName, defaultValue);
+		return _saveData.Get(maid.status.guid, pluginName, propName, defaultValue);
 	}
 
 	private static bool StringToBool(string s, bool defaultValue) {
@@ -138,7 +138,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!overwrite && Contains(maid, pluginName, propName)) {
 			return false;
 		}
-		return _pluginSettings.Set(maid.status.guid, pluginName, propName, value);
+		return _saveData.Set(maid.status.guid, pluginName, propName, value);
 	}
 
 	public static bool SetBool(Maid maid, string pluginName, string propName, bool value, bool overwrite) {
@@ -188,7 +188,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (maid == null || pluginName == null || propName == null) {
 			return false;
 		}
-		return _pluginSettings.Remove(maid.status.guid, pluginName, propName);
+		return _saveData.Remove(maid.status.guid, pluginName, propName);
 	}
 
 	/// <summary>
@@ -205,7 +205,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!Contains(maid)) {
 			SetMaid(maid);
 		}
-		return _pluginSettings.Contains(maid.status.guid, pluginName, propName);
+		return _saveData.Contains(maid.status.guid, pluginName, propName);
 	}
 
 	/// <summary>
@@ -214,7 +214,7 @@ public class ExSaveData : BaseUnityPlugin {
 	/// <param name="maid">メイドインスタンス</param>
 	/// <returns>true:指定したメイドが存在する。false:存在しない</returns>
 	public static bool Contains(Maid maid) {
-		return maid != null && _pluginSettings.ContainsMaid(maid.status.guid);
+		return maid != null && _saveData.ContainsMaid(maid.status.guid);
 	}
 
 	/// <summary>
@@ -227,7 +227,7 @@ public class ExSaveData : BaseUnityPlugin {
 			return;
 		}
 		var s = maid.status;
-		_pluginSettings.SetMaid(s.guid, s.lastName, s.firstName, s.creationTime);
+		_saveData.SetMaid(s.guid, s.lastName, s.firstName, s.creationTime);
 	}
 
 	/// <summary>
@@ -236,7 +236,7 @@ public class ExSaveData : BaseUnityPlugin {
 	/// <param name="guids">メイドGUIDリスト</param>
 	/// <returns></returns>
 	public static void CleanupMaids(List<string> guids) {
-		_pluginSettings.Cleanup(guids);
+		_saveData.Cleanup(guids);
 	}
 
 	public static void CleanupMaids() {
@@ -264,7 +264,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (pluginName == null || propName == null) {
 			return defaultValue;
 		}
-		return _pluginSettings.Get(SaveDataPluginSettings.GlobalMaidGuid, pluginName, propName, defaultValue);
+		return _saveData.Get(ExternalMaidData.GlobalMaidGuid, pluginName, propName, defaultValue);
 	}
 
 	public static bool GlobalGetBool(string pluginName, string propName, bool defaultValue) {
@@ -297,7 +297,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!overwrite && GlobalContains(pluginName, propName)) {
 			return false;
 		}
-		return _pluginSettings.Set(SaveDataPluginSettings.GlobalMaidGuid, pluginName, propName, value);
+		return _saveData.Set(ExternalMaidData.GlobalMaidGuid, pluginName, propName, value);
 	}
 
 	public static bool GlobalSetBool(string pluginName, string propName, bool value, bool overwrite) {
@@ -348,7 +348,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (pluginName == null || propName == null) {
 			return false;
 		}
-		return _pluginSettings.Remove(SaveDataPluginSettings.GlobalMaidGuid, pluginName, propName);
+		return _saveData.Remove(ExternalMaidData.GlobalMaidGuid, pluginName, propName);
 	}
 
 	/// <summary>
@@ -361,7 +361,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (pluginName == null || propName == null) {
 			return false;
 		}
-		return _pluginSettings.Contains(SaveDataPluginSettings.GlobalMaidGuid, pluginName, propName);
+		return _saveData.Contains(ExternalMaidData.GlobalMaidGuid, pluginName, propName);
 	}
 
 	/// <summary>
@@ -389,7 +389,7 @@ public class ExSaveData : BaseUnityPlugin {
 			return false;
 		}
 		var status = maid.status;
-		return _pluginSettings.SetMaidName(status.guid, status.lastName, status.firstName, status.creationTime);
+		return _saveData.SetMaidName(status.guid, status.lastName, status.firstName, status.creationTime);
 	}
 
 	[HarmonyPrefix]
@@ -410,9 +410,9 @@ public class ExSaveData : BaseUnityPlugin {
 
 	private static void OnDeserialize(GameMain __instance, int f_nSaveNo) {
 		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
-		_pluginSettings = new();
+		_saveData = new();
 		if (File.Exists(xmlFilePath)) {
-			_pluginSettings.Load(xmlFilePath);
+			_saveData.Load(xmlFilePath);
 		}
 	}
 
@@ -425,7 +425,7 @@ public class ExSaveData : BaseUnityPlugin {
 		CleanupMaids();
 		var path = GameMainMakeSavePathFileName(__instance, f_nSaveNo);
 		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
-		_pluginSettings.Save(xmlFilePath, path);
+		_saveData.Save(xmlFilePath, path);
 	}
 
 	private static void OnDeleteSerializeData(GameMain __instance, int f_nSaveNo) {

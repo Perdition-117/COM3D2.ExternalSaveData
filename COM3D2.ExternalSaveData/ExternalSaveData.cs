@@ -3,33 +3,36 @@ using System.Linq;
 namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalSaveData {
-	public string SaveFileName;       // 寄生先のセーブデータ名
-
 	public ExternalSaveData() {
-		Clear();
+		SetMaid(ExternalMaidData.GlobalMaidGuid, "", "", "");
 	}
 
 	internal Dictionary<string, ExternalMaidData> Maids { get; private set; } = new();
 
-	public void Clear() {
-		Maids.Clear();
-		SetMaid(SaveDataPluginSettings.GlobalMaidGuid, "", "", "");
-	}
-
-	public ExternalSaveData Load(XmlNode xmlNode) {
-		SaveFileName = xmlNode.GetAttribute("target");
-		Clear();
+	public void Load(string xmlFilePath) {
+		var xml = LoadXmlDocument(xmlFilePath);
+		var xmlNode = xml.SelectSingleNode("/savedata");
 
 		foreach (XmlNode node in xmlNode.SelectNodes("maids/maid")) {
 			if (node.TryGetAttribute("guid", out var guid)) {
 				Maids[guid] = new ExternalMaidData().Load(node);
 			}
 		}
-		return this;
 	}
 
-	public void Save(XmlNode xmlNode) {
-		xmlNode.SetAttribute("target", SaveFileName);
+	private static XmlDocument LoadXmlDocument(string xmlFilePath) {
+		var document = new XmlDocument();
+		if (File.Exists(xmlFilePath)) {
+			document.Load(xmlFilePath);
+		}
+		return document;
+	}
+
+	public void Save(string xmlFilePath, string targetSaveDataFileName) {
+		var document = LoadXmlDocument(xmlFilePath);
+
+		var xmlNode = document.SelectOrAppendNode("savedata");
+		xmlNode.SetAttribute("target", targetSaveDataFileName);
 		var xmlMaids = xmlNode.SelectOrAppendNode("maids", "maids");
 
 		// 存在しない<maid>を削除
@@ -43,10 +46,12 @@ internal class ExternalSaveData {
 			var node = xmlMaids.SelectOrAppendNode($"maid[@guid='{kv.Key}']", "maid");
 			kv.Value.Save(node);
 		}
+
+		document.Save(xmlFilePath);
 	}
 
 	public void Cleanup(List<string> guids) {
-		Maids = Maids.Where(kv => guids.Contains(kv.Key) || kv.Key == SaveDataPluginSettings.GlobalMaidGuid).ToDictionary(kv => kv.Key, kv => kv.Value);
+		Maids = Maids.Where(kv => guids.Contains(kv.Key) || kv.Key == ExternalMaidData.GlobalMaidGuid).ToDictionary(kv => kv.Key, kv => kv.Value);
 	}
 
 	private bool TryGetValue(string guid, out ExternalMaidData maid) {
