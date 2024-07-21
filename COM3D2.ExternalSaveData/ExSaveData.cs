@@ -409,6 +409,10 @@ public class ExSaveData : BaseUnityPlugin {
 	}
 
 	private static void OnDeserialize(GameMain __instance, int f_nSaveNo) {
+		if (f_nSaveNo == -1) {
+			return;
+		}
+
 		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
 		_saveData = new();
 		if (File.Exists(xmlFilePath)) {
@@ -417,6 +421,10 @@ public class ExSaveData : BaseUnityPlugin {
 	}
 
 	private static void OnSerialize(GameMain __instance, int f_nSaveNo, string f_strComment) {
+		if (f_nSaveNo == -1) {
+			return;
+		}
+
 		var cm = GameMain.Instance.CharacterMgr;
 		for (var i = 0; i < cm.GetStockMaidCount(); i++) {
 			var maid = cm.GetStockMaid(i);
