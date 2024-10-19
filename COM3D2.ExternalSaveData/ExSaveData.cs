@@ -35,8 +35,8 @@ public class ExSaveData : BaseUnityPlugin {
 	}
 
 	public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode) {
-		if (_saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
-			if (maidSaveData.Plugins.TryGetValue(pluginName, out var plugin)) {
+		if (_saveData.TryGetValue(maid.status.guid, out var maidSaveData)) {
+			if (maidSaveData.TryGetValue(pluginName, out var plugin)) {
 				plugin.Save(xmlNode);
 				return true;
 			}
@@ -49,12 +49,8 @@ public class ExSaveData : BaseUnityPlugin {
 			SetMaid(maid);
 		}
 
-		if (_saveData.Maids.TryGetValue(maid.status.guid, out var maidSaveData)) {
-			if (maidSaveData.Plugins.TryGetValue(pluginName, out var plugin)) {
-				plugin.Load(xmlNode);
-			} else {
-				maidSaveData.Plugins[pluginName] = new ExternalPluginData().Load(xmlNode);
-			}
+		if (_saveData.TryGetValue(maid.status.guid, out var maidSaveData)) {
+			maidSaveData.LoadPlugin(pluginName, xmlNode);
 		}
 	}
 

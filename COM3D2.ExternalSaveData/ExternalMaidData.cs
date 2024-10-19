@@ -1,6 +1,6 @@
 namespace CM3D2.ExternalSaveData.Managed;
 
-internal class ExternalMaidData {
+internal class ExternalMaidData : BaseExternalMaidData {
 	public const string GlobalMaidGuid = "global";
 
 	private string _guid;
@@ -8,41 +8,23 @@ internal class ExternalMaidData {
 	private string _firstName;
 	private string _createdTime;
 
-	internal Dictionary<string, ExternalPluginData> Plugins { get; } = new();
+	public override void Load(XmlNode xmlNode) {
+		var guid = xmlNode.GetAttribute("guid");
+		var lastName = xmlNode.GetAttribute("lastname");
+		var firstName = xmlNode.GetAttribute("firstname");
+		var createdTime = xmlNode.GetAttribute("createtime");
+		SetMaid(guid, lastName, firstName, createdTime);
 
-	public ExternalMaidData Load(XmlNode xmlNode) {
-		_guid = xmlNode.GetAttribute("guid");
-		_lastName = xmlNode.GetAttribute("lastname");
-		_firstName = xmlNode.GetAttribute("firstname");
-		_createdTime = xmlNode.GetAttribute("createtime");
-		Plugins.Clear();
-
-		foreach (XmlNode node in xmlNode.SelectNodes("plugins/plugin")) {
-			if (node.TryGetAttribute("name", out var name)) {
-				Plugins[name] = new ExternalPluginData().Load(node);
-			}
-		}
-
-		return this;
+		LoadPlugins(xmlNode);
 	}
 
-	public void Save(XmlNode xmlNode) {
+	public override void Save(XmlNode xmlNode) {
 		xmlNode.SetAttribute("guid", _guid);
 		xmlNode.SetAttribute("lastname", _lastName);
 		xmlNode.SetAttribute("firstname", _firstName);
 		xmlNode.SetAttribute("createtime", _createdTime);
 
-		var xmlPlugins = xmlNode.SelectOrAppendNode("plugins", null);
-		foreach (var kv in Plugins) {
-			var path = $"plugin[@name='{kv.Key}']";
-			var node = xmlPlugins.SelectSingleNode(path);
-			if (node == null) {
-				node = xmlPlugins.SelectOrAppendNode(path, "plugin");
-			} else {
-				node.RemoveAll();
-			}
-			kv.Value.Save(node);
-		}
+		SavePlugins(xmlNode);
 	}
 
 	public void SetMaid(string guid, string lastName, string firstName, string createdTime) {
@@ -50,7 +32,7 @@ internal class ExternalMaidData {
 		_lastName = lastName;
 		_firstName = firstName;
 		_createdTime = createdTime;
-		Plugins.Clear();
+		_plugins.Clear();
 	}
 
 	public bool SetMaidName(string lastName, string firstName, string createdTime) {
@@ -58,29 +40,5 @@ internal class ExternalMaidData {
 		_firstName = firstName;
 		_createdTime = createdTime;
 		return true;
-	}
-
-	private bool TryGetValue(string pluginName, out ExternalPluginData plugin) {
-		return Plugins.TryGetValue(pluginName, out plugin);
-	}
-
-	public bool Contains(string pluginName, string propName) {
-		return TryGetValue(pluginName, out var plugin) && plugin.Contains(propName);
-	}
-
-	public string Get(string pluginName, string propName, string defaultValue) {
-		return TryGetValue(pluginName, out var plugin) ? plugin.Get(propName, defaultValue) : defaultValue;
-	}
-
-	public bool Set(string pluginName, string propName, string value) {
-		if (!TryGetValue(pluginName, out var plugin)) {
-			plugin = new() { name = pluginName };
-			Plugins[pluginName] = plugin;
-		}
-		return plugin.Set(propName, value);
-	}
-
-	public bool Remove(string pluginName, string propName) {
-		return TryGetValue(pluginName, out var plugin) && plugin.Remove(propName);
 	}
 }

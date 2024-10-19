@@ -1,39 +1,29 @@
 namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalPluginData {
-	public string name;
-	public Dictionary<string, string> props = new();
+	private readonly string _pluginName;
 
-	public ExternalPluginData Load(XmlNode xmlNode) {
-		name = xmlNode.GetAttribute("name");
-		props = new();
+	public ExternalPluginData(string pluginName) {
+		_pluginName = pluginName;
+	}
+
+	public Dictionary<string, string> Properties { get; } = new();
+
+	public static ExternalPluginData Load(XmlNode xmlNode) {
+		var pluginName = xmlNode.GetAttribute("name");
+		var pluginData = new ExternalPluginData(pluginName);
 		foreach (XmlNode node in xmlNode.SelectNodes("prop")) {
-			props[node.GetAttribute("name")] = node.GetAttribute("value");
+			pluginData.Properties[node.GetAttribute("name")] = node.GetAttribute("value");
 		}
-		return this;
+		return pluginData;
 	}
 
 	public void Save(XmlNode xmlNode) {
-		xmlNode.SetAttribute("name", name);
-		foreach (var kv in props) {
+		xmlNode.SetAttribute("name", _pluginName);
+		foreach (var kv in Properties) {
 			var node = xmlNode.SelectOrAppendNode($"prop[@name='{kv.Key}']", "prop");
 			node.SetAttribute("name", kv.Key);
 			node.SetAttribute("value", kv.Value);
 		}
-	}
-
-	public bool Contains(string propName) => props.ContainsKey(propName);
-
-	public string Get(string propName, string defaultValue) {
-		return props.TryGetValue(propName, out var value) ? value : defaultValue;
-	}
-
-	public bool Set(string propName, string value) {
-		props[propName] = value;
-		return true;
-	}
-
-	public bool Remove(string propName) {
-		return props.Remove(propName);
 	}
 }

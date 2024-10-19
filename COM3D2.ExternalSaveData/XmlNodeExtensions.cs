@@ -20,7 +20,7 @@ static class XmlNodeExtensions {
 		xmlElement.SetAttribute(name, value);
 	}
 
-	public static XmlNode SelectOrAppendNode(this XmlNode xmlNode, string path, string prefix) {
+	public static XmlNode SelectOrAppendNode(this XmlNode xmlNode, string path, string prefix = null) {
 		prefix ??= path;
 
 		var node = xmlNode.SelectSingleNode(path);

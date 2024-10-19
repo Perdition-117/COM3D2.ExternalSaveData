@@ -1,23 +1,17 @@
-using System.Linq;
-
 namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalSaveData {
+	private readonly MaidDataManager<ExternalMaidData> _maidDataManager = new("maids", "guid");
+
 	public ExternalSaveData() {
 		SetMaid(ExternalMaidData.GlobalMaidGuid, "", "", "");
 	}
-
-	internal Dictionary<string, ExternalMaidData> Maids { get; private set; } = new();
 
 	public void Load(string xmlFilePath) {
 		var xml = LoadXmlDocument(xmlFilePath);
 		var xmlNode = xml.SelectSingleNode("/savedata");
 
-		foreach (XmlNode node in xmlNode.SelectNodes("maids/maid")) {
-			if (node.TryGetAttribute("guid", out var guid)) {
-				Maids[guid] = new ExternalMaidData().Load(node);
-			}
-		}
+		_maidDataManager.LoadMaids(xmlNode);
 	}
 
 	private static XmlDocument LoadXmlDocument(string xmlFilePath) {
@@ -33,44 +27,39 @@ internal class ExternalSaveData {
 
 		var xmlNode = document.SelectOrAppendNode("savedata");
 		xmlNode.SetAttribute("target", targetSaveDataFileName);
-		var xmlMaids = xmlNode.SelectOrAppendNode("maids", "maids");
 
-		// 存在しない<maid>を削除
-		foreach (XmlNode node in xmlMaids.SelectNodes("maid")) {
-			if (!(node.TryGetAttribute("guid", out var guid) && Maids.ContainsKey(guid))) {
-				xmlMaids.RemoveChild(node);
-			}
-		}
-
-		foreach (var kv in Maids.OrderBy(kv => kv.Key).ToDictionary(kv => kv.Key, kv => kv.Value)) {
-			var node = xmlMaids.SelectOrAppendNode($"maid[@guid='{kv.Key}']", "maid");
-			kv.Value.Save(node);
-		}
+		_maidDataManager.SaveMaids(xmlNode);
 
 		document.Save(xmlFilePath);
 	}
 
 	public void Cleanup(List<string> guids) {
-		Maids = Maids.Where(kv => guids.Contains(kv.Key) || kv.Key == ExternalMaidData.GlobalMaidGuid).ToDictionary(kv => kv.Key, kv => kv.Value);
+		_maidDataManager.Cleanup(guids);
 	}
 
-	private bool TryGetValue(string guid, out ExternalMaidData maid) {
-		return Maids.TryGetValue(guid, out maid);
+	public bool TryGetValue(string guid, out BaseExternalMaidData maidData) {
+		maidData = null;
+		if (_maidDataManager.TryGetValue(guid, out var maid)) {
+			maidData = maid;
+			return true;
+		}
+		return false;
 	}
 
 	public void SetMaid(string guid, string lastName, string firstName, string createTime) {
-		if (!TryGetValue(guid, out var maid)) {
-			maid = new();
-			Maids[guid] = maid;
+		if (!_maidDataManager.TryGetValue(guid, out var maid)) {
+			maid = _maidDataManager.Add(guid);
 		}
 		maid.SetMaid(guid, lastName, firstName, createTime);
 	}
 
 	public bool SetMaidName(string guid, string lastName, string firstName, string createTime) {
-		return TryGetValue(guid, out var maid) && maid.SetMaidName(lastName, firstName, createTime);
+		return _maidDataManager.TryGetValue(guid, out var maid) && maid.SetMaidName(lastName, firstName, createTime);
 	}
 
-	public bool ContainsMaid(string guid) => Maids.ContainsKey(guid);
+	public bool ContainsMaid(string guid) {
+		return _maidDataManager.ContainsKey(guid);
+	}
 
 	public bool Contains(string guid, string pluginName, string propName) {
 		return TryGetValue(guid, out var maid) && maid.Contains(pluginName, propName);
