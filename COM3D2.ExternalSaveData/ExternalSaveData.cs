@@ -37,9 +37,9 @@ internal class ExternalSaveData {
 		_maidDataManager.Cleanup(guids);
 	}
 
-	public bool TryGetValue(string guid, out BaseExternalMaidData maidData) {
+	private bool TryGetMaid(string guid, out BaseExternalMaidData maidData) {
 		maidData = null;
-		if (_maidDataManager.TryGetValue(guid, out var maid)) {
+		if (_maidDataManager.TryGetMaid(guid, out var maid)) {
 			maidData = maid;
 			return true;
 		}
@@ -47,33 +47,21 @@ internal class ExternalSaveData {
 	}
 
 	public void SetMaid(string guid, string lastName, string firstName, string createTime) {
-		if (!_maidDataManager.TryGetValue(guid, out var maid)) {
-			maid = _maidDataManager.Add(guid);
+		if (!_maidDataManager.TryGetMaid(guid, out var maid)) {
+			maid = _maidDataManager.AddMaid(guid);
 		}
 		maid.SetMaid(guid, lastName, firstName, createTime);
 	}
 
 	public bool SetMaidName(string guid, string lastName, string firstName, string createTime) {
-		return _maidDataManager.TryGetValue(guid, out var maid) && maid.SetMaidName(lastName, firstName, createTime);
+		return _maidDataManager.TryGetMaid(guid, out var maid) && maid.SetMaidName(lastName, firstName, createTime);
 	}
 
-	public bool ContainsMaid(string guid) {
-		return _maidDataManager.ContainsKey(guid);
+	public bool HasMaid(string guid) {
+		return _maidDataManager.HasMaid(guid);
 	}
 
-	public bool Contains(string guid, string pluginName, string propName) {
-		return TryGetValue(guid, out var maid) && maid.Contains(pluginName, propName);
-	}
-
-	public string Get(string guid, string pluginName, string propName, string defaultValue) {
-		return TryGetValue(guid, out var maid) ? maid.Get(pluginName, propName, defaultValue) : defaultValue;
-	}
-
-	public bool Set(string guid, string pluginName, string propName, string value) {
-		return TryGetValue(guid, out var maid) && maid.Set(pluginName, propName, value);
-	}
-
-	public bool Remove(string guid, string pluginName, string propName) {
-		return TryGetValue(guid, out var maid) && maid.Remove(pluginName, propName);
+	public BaseExternalMaidData GetMaidData(string guid) {
+		return TryGetMaid(guid, out var maid) ? maid : default;
 	}
 }

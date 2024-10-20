@@ -26,4 +26,21 @@ internal class ExternalPluginData {
 			node.SetAttribute("value", kv.Value);
 		}
 	}
+
+	public bool HasProperty(string propertyName) {
+		return Properties.ContainsKey(propertyName);
+	}
+
+	public string GetPropertyValue(string propertyName) {
+		return Properties.TryGetValue(propertyName, out var value) ? value : null;
+	}
+
+	public bool SetPropertyValue(string propertyName, string value) {
+		Properties[propertyName] = value;
+		return true;
+	}
+
+	public bool RemoveProperty(string propertyName) {
+		return Properties.Remove(propertyName);
+	}
 }

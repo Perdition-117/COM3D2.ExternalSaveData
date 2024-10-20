@@ -34,22 +34,32 @@ public class ExSaveData : BaseUnityPlugin {
 		_logger.LogError(data);
 	}
 
-	public static bool TryGetXml(Maid maid, string pluginName, XmlNode xmlNode) {
-		if (_saveData.TryGetValue(maid.status.guid, out var maidSaveData)) {
-			if (maidSaveData.TryGetValue(pluginName, out var plugin)) {
-				plugin.Save(xmlNode);
-				return true;
-			}
+	private static BaseExternalMaidData GetMaidData(Maid maid) {
+		return _saveData.GetMaidData(maid.status.guid);
+	}
+
+	private static ExternalPluginData GetMaidPluginData(Maid maid, string pluginName) {
+		return GetMaidData(maid)?.GetPluginData(pluginName);
+	}
+
+	private static ExternalPluginData GetMaidPluginData(string pluginName) {
+		return _saveData.GetMaidData(ExternalMaidData.GlobalMaidGuid)?.GetPluginData(pluginName);
+	}
+
+	public static bool TrySavePluginData(Maid maid, string pluginName, XmlNode xmlNode) {
+		if (GetMaidPluginData(maid, pluginName) is ExternalPluginData plugin) {
+			plugin.Save(xmlNode);
+			return true;
 		}
 		return false;
 	}
 
-	public static void SetXml(Maid maid, string pluginName, XmlNode xmlNode) {
+	public static void LoadPluginData(Maid maid, string pluginName, XmlNode xmlNode) {
 		if (!Contains(maid)) {
 			SetMaid(maid);
 		}
 
-		if (_saveData.TryGetValue(maid.status.guid, out var maidSaveData)) {
+		if (GetMaidData(maid) is BaseExternalMaidData maidSaveData) {
 			maidSaveData.LoadPlugin(pluginName, xmlNode);
 		}
 	}
@@ -73,7 +83,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!Contains(maid)) {
 			SetMaid(maid);
 		}
-		return _saveData.Get(maid.status.guid, pluginName, propName, defaultValue);
+		return GetMaidPluginData(maid, pluginName)?.GetPropertyValue(propName) ?? defaultValue;
 	}
 
 	private static bool StringToBool(string s, bool defaultValue) {
@@ -134,7 +144,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!overwrite && Contains(maid, pluginName, propName)) {
 			return false;
 		}
-		return _saveData.Set(maid.status.guid, pluginName, propName, value);
+		return GetMaidData(maid)?.SetPropertyValue(pluginName, propName, value) ?? false;
 	}
 
 	public static bool SetBool(Maid maid, string pluginName, string propName, bool value, bool overwrite) {
@@ -184,7 +194,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (maid == null || pluginName == null || propName == null) {
 			return false;
 		}
-		return _saveData.Remove(maid.status.guid, pluginName, propName);
+		return GetMaidPluginData(maid, pluginName)?.RemoveProperty(propName) ?? false;
 	}
 
 	/// <summary>
@@ -201,7 +211,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!Contains(maid)) {
 			SetMaid(maid);
 		}
-		return _saveData.Contains(maid.status.guid, pluginName, propName);
+		return GetMaidPluginData(maid, pluginName)?.HasProperty(propName) ?? false;
 	}
 
 	/// <summary>
@@ -210,7 +220,7 @@ public class ExSaveData : BaseUnityPlugin {
 	/// <param name="maid">メイドインスタンス</param>
 	/// <returns>true:指定したメイドが存在する。false:存在しない</returns>
 	public static bool Contains(Maid maid) {
-		return maid != null && _saveData.ContainsMaid(maid.status.guid);
+		return maid != null && _saveData.HasMaid(maid.status.guid);
 	}
 
 	/// <summary>
@@ -222,8 +232,8 @@ public class ExSaveData : BaseUnityPlugin {
 		if (maid == null) {
 			return;
 		}
-		var s = maid.status;
-		_saveData.SetMaid(s.guid, s.lastName, s.firstName, s.creationTime);
+		var status = maid.status;
+		_saveData.SetMaid(status.guid, status.lastName, status.firstName, status.creationTime);
 	}
 
 	/// <summary>
@@ -260,7 +270,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (pluginName == null || propName == null) {
 			return defaultValue;
 		}
-		return _saveData.Get(ExternalMaidData.GlobalMaidGuid, pluginName, propName, defaultValue);
+		return GetMaidPluginData(pluginName)?.GetPropertyValue(propName) ?? defaultValue;
 	}
 
 	public static bool GlobalGetBool(string pluginName, string propName, bool defaultValue) {
@@ -293,7 +303,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (!overwrite && GlobalContains(pluginName, propName)) {
 			return false;
 		}
-		return _saveData.Set(ExternalMaidData.GlobalMaidGuid, pluginName, propName, value);
+		return _saveData.GetMaidData(ExternalMaidData.GlobalMaidGuid)?.SetPropertyValue(pluginName, propName, value) ?? false;
 	}
 
 	public static bool GlobalSetBool(string pluginName, string propName, bool value, bool overwrite) {
@@ -344,7 +354,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (pluginName == null || propName == null) {
 			return false;
 		}
-		return _saveData.Remove(ExternalMaidData.GlobalMaidGuid, pluginName, propName);
+		return GetMaidPluginData(pluginName)?.RemoveProperty(propName) ?? false;
 	}
 
 	/// <summary>
@@ -357,7 +367,7 @@ public class ExSaveData : BaseUnityPlugin {
 		if (pluginName == null || propName == null) {
 			return false;
 		}
-		return _saveData.Contains(ExternalMaidData.GlobalMaidGuid, pluginName, propName);
+		return GetMaidPluginData(pluginName)?.HasProperty(propName) ?? false;
 	}
 
 	/// <summary>
@@ -367,7 +377,7 @@ public class ExSaveData : BaseUnityPlugin {
 	/// <param name="f_nSaveNo">セーブファイル番号</param>
 	/// <returns>拡張セーブデータのファイル名</returns>
 	public static string makeXmlFilename(GameMain that, int f_nSaveNo) {
-		return GameMainMakeSavePathFileName(that, f_nSaveNo) + ".exsave.xml";
+		return GetExternalSaveDataPath(f_nSaveNo);
 	}
 
 	/// <summary>
@@ -377,7 +387,15 @@ public class ExSaveData : BaseUnityPlugin {
 	/// <param name="f_nSaveNo">セーブファイル番号</param>
 	/// <returns>セーブデータのファイル名</returns>
 	public static string GameMainMakeSavePathFileName(GameMain that, int f_nSaveNo) {
-		return that.MakeSavePathFileName(f_nSaveNo);
+		return GetSaveDataPath(f_nSaveNo);
+	}
+
+	private static string GetSaveDataPath(int saveIndex) {
+		return GameMain.Instance.MakeSavePathFileName(saveIndex);
+	}
+
+	private static string GetExternalSaveDataPath(int saveIndex) {
+		return GetSaveDataPath(saveIndex) + ".exsave.xml";
 	}
 
 	private static bool SetMaidName(Maid maid) {
@@ -409,7 +427,7 @@ public class ExSaveData : BaseUnityPlugin {
 			return;
 		}
 
-		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+		var xmlFilePath = GetExternalSaveDataPath(f_nSaveNo);
 		_saveData = new();
 		if (File.Exists(xmlFilePath)) {
 			_saveData.Load(xmlFilePath);
@@ -427,13 +445,13 @@ public class ExSaveData : BaseUnityPlugin {
 			SetMaidName(maid);
 		}
 		CleanupMaids();
-		var path = GameMainMakeSavePathFileName(__instance, f_nSaveNo);
-		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+		var path = GetSaveDataPath(f_nSaveNo);
+		var xmlFilePath = GetExternalSaveDataPath(f_nSaveNo);
 		_saveData.Save(xmlFilePath, path);
 	}
 
 	private static void OnDeleteSerializeData(GameMain __instance, int f_nSaveNo) {
-		var xmlFilePath = makeXmlFilename(__instance, f_nSaveNo);
+		var xmlFilePath = GetExternalSaveDataPath(f_nSaveNo);
 		if (File.Exists(xmlFilePath)) {
 			File.Delete(xmlFilePath);
 		}

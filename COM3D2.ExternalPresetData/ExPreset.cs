@@ -59,7 +59,7 @@ public class ExPreset : BaseUnityPlugin {
 			var node = xml.SelectSingleNode($"//plugin[@name='{pluginName}']");
 			if (node == null) continue;
 
-			ExSaveData.SetXml(maid, pluginName, node);
+			ExSaveData.LoadPluginData(maid, pluginName, node);
 		}
 
 		// エディットシーン以外でもプリセットが使われるようになったが、
@@ -84,7 +84,7 @@ public class ExPreset : BaseUnityPlugin {
 
 		foreach (var pluginName in ExternalSaveDataNodes) {
 			var node = xmlDocument.CreateElement("plugin");
-			if (ExSaveData.TryGetXml(maid, pluginName, node)) {
+			if (ExSaveData.TrySavePluginData(maid, pluginName, node)) {
 				rootNode.AppendChild(node);
 				hasNodes = true;
 			}

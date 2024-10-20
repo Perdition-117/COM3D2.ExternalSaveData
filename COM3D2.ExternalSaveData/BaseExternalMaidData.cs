@@ -33,32 +33,15 @@ internal abstract class BaseExternalMaidData {
 		_plugins[pluginName] = ExternalPluginData.Load(xmlNode);
 	}
 
-	public ExternalPluginData GetPlugin(string pluginName) {
-		return _plugins.TryGetValue(pluginName, out var plugin) ? plugin : default;
+	public ExternalPluginData GetPluginData(string pluginName) {
+		return _plugins.TryGetValue(pluginName, out var plugin) ? plugin : null;
 	}
 
-	public bool TryGetValue(string pluginName, out ExternalPluginData plugin) {
-		return _plugins.TryGetValue(pluginName, out plugin);
-	}
-
-	public bool Contains(string pluginName, string propName) {
-		return TryGetValue(pluginName, out var plugin) && plugin.Properties.ContainsKey(propName);
-	}
-
-	public string Get(string pluginName, string propName, string defaultValue) {
-		return TryGetValue(pluginName, out var plugin) && plugin.Properties.TryGetValue(propName, out var value) ? value : defaultValue;
-	}
-
-	public bool Set(string pluginName, string propName, string value) {
-		if (!TryGetValue(pluginName, out var plugin)) {
+	public bool SetPropertyValue(string pluginName, string propertyName, string value) {
+		if (!_plugins.TryGetValue(pluginName, out var plugin)) {
 			plugin = new(pluginName);
 			_plugins[pluginName] = plugin;
 		}
-		plugin.Properties[propName] = value;
-		return true;
-	}
-
-	public bool Remove(string pluginName, string propName) {
-		return TryGetValue(pluginName, out var plugin) && plugin.Properties.Remove(propName);
+		return plugin.SetPropertyValue(propertyName, value);
 	}
 }
