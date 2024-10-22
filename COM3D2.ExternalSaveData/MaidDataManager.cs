@@ -18,7 +18,7 @@ internal class MaidDataManager<T> where T : BaseExternalMaidData, new() {
 		return _maids.TryGetValue(key, out maid);
 	}
 
-	public T AddMaid(string guid) => _maids[guid] = new();
+	public T AddMaid(string key) => _maids[key] = new();
 
 	public void Cleanup(List<string> guids) {
 		_maids = _maids.Where(kv => guids.Contains(kv.Key) || kv.Key == ExternalMaidData.GlobalMaidGuid).ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -26,10 +26,10 @@ internal class MaidDataManager<T> where T : BaseExternalMaidData, new() {
 
 	public void LoadMaids(XmlNode xmlNode) {
 		foreach (XmlNode node in xmlNode.SelectNodes($"{_xpath}/maid")) {
-			if (node.TryGetAttribute(_attributeName, out var guid)) {
+			if (node.TryGetAttribute(_attributeName, out var key)) {
 				var maid = new T();
-				_maids[guid] = maid;
-				_maids[guid].Load(node);
+				_maids[key] = maid;
+				_maids[key].Load(node);
 			}
 		}
 	}

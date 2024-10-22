@@ -30,6 +30,26 @@ public class ExSaveData : BaseUnityPlugin {
 		DeleteSerializeData.Callbacks.Add(CallbackName, OnDeleteSerializeData);
 	}
 
+	[HarmonyPrefix]
+	[HarmonyPatch(typeof(CharacterMgr.NpcData), nameof(CharacterMgr.NpcData.Apply))]
+	private static void Apply(CharacterMgr.NpcData __instance, Maid maid) {
+		if (GameMain.Instance.CharacterMgr != null && maid != null && !maid.boMAN) {
+			_logger.LogDebug($"Applying NPC preset {__instance.presetFileName} ({maid.status.guid})...");
+			_saveData.NpcGuids[maid.status.guid] = __instance.uniqueName;
+		}
+	}
+
+	[HarmonyPrefix]
+	[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.Deactivate))]
+	private static void Deactivate(CharacterMgr __instance, int f_nActiveSlotNo, bool f_bMan) {
+		if (f_nActiveSlotNo != -1 && !f_bMan && __instance.m_objActiveMaid[f_nActiveSlotNo] && __instance.m_gcActiveMaid[f_nActiveSlotNo] is Maid maid) {
+			if (_saveData.NpcGuids.ContainsKey(maid.status.guid)) {
+				_logger.LogDebug($"Deactivating NPC maid {maid.status.guid}...");
+				_saveData.NpcGuids.Remove(maid.status.guid);
+			}
+		}
+	}
+
 	internal static void LogError(object data) {
 		_logger.LogError(data);
 	}

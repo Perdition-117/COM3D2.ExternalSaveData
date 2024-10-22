@@ -2,6 +2,9 @@ namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalSaveData {
 	private readonly MaidDataManager<ExternalMaidData> _maidDataManager = new("maids", "guid");
+	private readonly MaidDataManager<ExternalNpcMaidData> _npcMaidDataManager = new("npcMaids", "uniqueName");
+
+	internal readonly Dictionary<string, string> NpcGuids = new();
 
 	public ExternalSaveData() {
 		SetMaid(ExternalMaidData.GlobalMaidGuid, "", "", "");
@@ -12,6 +15,7 @@ internal class ExternalSaveData {
 		var xmlNode = xml.SelectSingleNode("/savedata");
 
 		_maidDataManager.LoadMaids(xmlNode);
+		_npcMaidDataManager.LoadMaids(xmlNode);
 	}
 
 	private static XmlDocument LoadXmlDocument(string xmlFilePath) {
@@ -29,6 +33,7 @@ internal class ExternalSaveData {
 		xmlNode.SetAttribute("target", targetSaveDataFileName);
 
 		_maidDataManager.SaveMaids(xmlNode);
+		_npcMaidDataManager.SaveMaids(xmlNode);
 
 		document.Save(xmlFilePath);
 	}
@@ -39,6 +44,10 @@ internal class ExternalSaveData {
 
 	private bool TryGetMaid(string guid, out BaseExternalMaidData maidData) {
 		maidData = null;
+		if (NpcGuids.TryGetValue(guid, out var npcMaidName) && _npcMaidDataManager.TryGetMaid(npcMaidName, out var npcMaid)) {
+            maidData = npcMaid;
+			return true;
+		}
 		if (_maidDataManager.TryGetMaid(guid, out var maid)) {
 			maidData = maid;
 			return true;
@@ -47,10 +56,17 @@ internal class ExternalSaveData {
 	}
 
 	public void SetMaid(string guid, string lastName, string firstName, string createTime) {
-		if (!_maidDataManager.TryGetMaid(guid, out var maid)) {
-			maid = _maidDataManager.AddMaid(guid);
+		if (NpcGuids.TryGetValue(guid, out var npcMaidName)) {
+			if (!_npcMaidDataManager.TryGetMaid(npcMaidName, out var npcMaid)) {
+				npcMaid = _npcMaidDataManager.AddMaid(npcMaidName);
+			}
+			npcMaid.SetMaid(npcMaidName);
+		} else {
+			if (!_maidDataManager.TryGetMaid(guid, out var maid)) {
+				maid = _maidDataManager.AddMaid(guid);
+			}
+			maid.SetMaid(guid, lastName, firstName, createTime);
 		}
-		maid.SetMaid(guid, lastName, firstName, createTime);
 	}
 
 	public bool SetMaidName(string guid, string lastName, string firstName, string createTime) {
@@ -58,7 +74,7 @@ internal class ExternalSaveData {
 	}
 
 	public bool HasMaid(string guid) {
-		return _maidDataManager.HasMaid(guid);
+		return NpcGuids.ContainsKey(guid) ? _npcMaidDataManager.HasMaid(guid) : _maidDataManager.HasMaid(guid);
 	}
 
 	public BaseExternalMaidData GetMaidData(string guid) {
