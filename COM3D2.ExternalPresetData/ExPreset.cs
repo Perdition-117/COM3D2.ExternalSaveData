@@ -102,8 +102,11 @@ public class ExPreset : BaseUnityPlugin {
 	}
 
 	public static void Save(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
-		//MaidVoicePitchSave(maid, presetFileName, presetType);
-		PluginsSave(maid, presetFileName, presetType);
+		// file name may be null when the save method is intercepted and cancelled
+		if (presetFileName != null) {
+			//MaidVoicePitchSave(maid, presetFileName, presetType);
+			PluginsSave(maid, presetFileName, presetType);
+		}
 	}
 
 	private static void PluginsSave(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
