@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Xml;
 using BepInEx;
 using BepInEx.Logging;
@@ -29,7 +32,9 @@ public class ExPreset : BaseUnityPlugin {
 	private void Awake() {
 		_logger = Logger;
 
-		Harmony.CreateAndPatchAll(typeof(ExternalPresetPatch));
+		var version = new Version(GameUty.GetBuildVersionText());
+		Harmony.CreateAndPatchAll(typeof(ExPreset));
+		Harmony.CreateAndPatchAll(version.Major >= 3 ? typeof(ExPreset30) : typeof(ExPreset20));
 	}
 
 	public static void Load(Maid maid, CharacterMgr.Preset preset) {
@@ -130,5 +135,52 @@ public class ExPreset : BaseUnityPlugin {
 	// 例はMaidVoicePitchなどを参照
 	public static void AddExSaveNode(string pluginName) {
 		ExternalSaveDataNodes.Add(pluginName);
+	}
+
+	class ExPreset30 {
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetSet), typeof(Maid), typeof(CharacterMgr.Preset), typeof(bool))]
+		private static void OnPresetSet(Maid f_maid, CharacterMgr.Preset f_prest) => Load(f_maid, f_prest);
+	}
+
+	class ExPreset20 {
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetSet), typeof(Maid), typeof(CharacterMgr.Preset))]
+		private static void OnPresetSet(Maid f_maid, CharacterMgr.Preset f_prest) => Load(f_maid, f_prest);
+	}
+
+	[HarmonyTranspiler]
+	[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetSave))]
+	private static IEnumerable<CodeInstruction> PresetSave(IEnumerable<CodeInstruction> instructions) {
+		var codes = new List<CodeInstruction>(instructions);
+		var instructionIndex = codes.FindIndex(e => e.opcode == OpCodes.Stfld && (e.operand as FieldInfo) == AccessTools.Field(typeof(CharacterMgr.Preset), nameof(CharacterMgr.Preset.strFileName)));
+
+		var codeMatcher = new CodeMatcher(instructions);
+
+		codeMatcher
+			.MatchEndForward(new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(File), nameof(File.WriteAllBytes))))
+			.Insert(
+				new CodeInstruction(OpCodes.Ldarg_1),
+				new CodeInstruction(OpCodes.Ldloc_S, codes[instructionIndex - 1].operand),
+				new CodeInstruction(OpCodes.Ldarg_2),
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ExPreset), nameof(Save)))
+			);
+
+		return codeMatcher.InstructionEnumeration();
+	}
+
+	[HarmonyTranspiler]
+	[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetDelete))]
+	private static IEnumerable<CodeInstruction> PresetDelete(IEnumerable<CodeInstruction> instructions) {
+		var codeMatcher = new CodeMatcher(instructions);
+
+		codeMatcher
+			.MatchEndForward(new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(File), nameof(File.Delete))))
+			.Insert(
+				new CodeInstruction(OpCodes.Ldarg_1),
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ExPreset), nameof(Delete)))
+			);
+
+		return codeMatcher.InstructionEnumeration();
 	}
 }
