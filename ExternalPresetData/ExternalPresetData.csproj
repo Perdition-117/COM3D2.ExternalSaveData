@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\COM3D2.ExternalSaveData\COM3D2.ExternalSaveData.csproj" />
+    <ProjectReference Include="..\ExternalSaveData\ExternalSaveData.csproj" />
   </ItemGroup>
 
 </Project>

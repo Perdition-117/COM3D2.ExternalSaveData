@@ -7,7 +7,7 @@ using System.Xml;
 using BepInEx;
 using BepInEx.Logging;
 using CM3D2.ExternalSaveData.Managed;
-using COM3D2.ExternalPresetData;
+using ExternalPresetData;
 using HarmonyLib;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;

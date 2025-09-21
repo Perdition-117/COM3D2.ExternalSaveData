@@ -1,7 +1,7 @@
 using BepInEx;
 using BepInEx.Logging;
 using CM3D2.ExternalSaveData.Managed.GameMainCallbacks;
-using COM3D2.ExternalSaveData;
+using ExternalSaveData;
 using HarmonyLib;
 
 namespace CM3D2.ExternalSaveData.Managed;
