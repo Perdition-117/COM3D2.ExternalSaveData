@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
     <BaseOutputPath>..\artifacts\</BaseOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 </Project>

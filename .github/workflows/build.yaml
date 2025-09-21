@@ -1,0 +1,41 @@
+name: build
+
+on:
+  push:
+    tags:
+      - '**'
+
+env:
+  DOTNET_VERSION: '6.0.x' # .NET SDK version
+  DOTNET_CLI_TELEMETRY_OPTOUT: false
+  ARCHIVE_PATH: ${{ github.workspace }}\${{ github.event.repository.name }}-${{ github.ref_name }}.zip
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Create package
+        run: |
+          Set-Location artifacts\Release
+          New-Item -Type Directory ModSliders
+          Move-Item COM3D2.ExternalPreset.Managed.dll,COM3D2.ExternalSaveData.Managed.dll ModSliders
+          Compress-Archive -DestinationPath $env:ARCHIVE_PATH -Path ModSliders
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: ${{ env.ARCHIVE_PATH }}
