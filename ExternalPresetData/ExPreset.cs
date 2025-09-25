@@ -19,10 +19,12 @@ namespace CM3D2.ExternalPreset.Managed;
 public class ExPreset : BaseUnityPlugin {
 	private static readonly HashSet<string> ExternalSaveDataNodes = new();
 
-	// backwards compatibility with AutoConverter
+	// backwards compatibility (AutoConverter, ModItemExplorer)
 	private static readonly HashSet<string> exsaveNodeNameMap = ExternalSaveDataNodes;
 
 	private static XmlDocument _xmlMemory = null;
+	// backwards compatibility (ModItemExplorer)
+	private static XmlDocument xmlMemory = null;
 
 	// プリセット適用時に通知が必要な場合はここに登録
 	public static UnityEvent loadNotify = new();
@@ -47,6 +49,7 @@ public class ExPreset : BaseUnityPlugin {
 		if (preset.strFileName == "") {
 			xml = _xmlMemory;
 			_xmlMemory = null;
+			xmlMemory = null;
 		} else {
 			var exPresetPath = GetExPresetPath(preset.strFileName);
 
@@ -103,6 +106,7 @@ public class ExPreset : BaseUnityPlugin {
 	public static void PostCharacterMgrPresetSaveNotWriteFile(CharacterMgr __instance, Maid f_maid, CharacterMgr.PresetType f_type) {
 		if (TryGetExternalSaveData(f_maid, f_type, out var xml)) {
 			_xmlMemory = xml;
+			xmlMemory = xml;
 		}
 	}
 

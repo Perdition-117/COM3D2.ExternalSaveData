@@ -86,6 +86,9 @@ public class ExSaveData : BaseUnityPlugin {
 		}
 	}
 
+	// backwards compatibility (ModItemExplorer)
+	public static void SetXml(Maid maid, string pluginName, XmlNode xmlNode) => LoadPluginData(maid, pluginName, xmlNode);
+
 	/// <summary>
 	/// 拡張セーブデータ内の設定を得る(文字列)
 	/// <para>指定した設定が存在しない場合はdefaultValueを返す</para>
