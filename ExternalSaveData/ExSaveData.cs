@@ -3,6 +3,7 @@ using BepInEx.Logging;
 using CM3D2.ExternalSaveData.Managed.GameMainCallbacks;
 using ExternalSaveData;
 using HarmonyLib;
+using MaidCafe;
 
 namespace CM3D2.ExternalSaveData.Managed;
 
@@ -13,6 +14,7 @@ public class ExSaveData : BaseUnityPlugin {
 	// 通常のプラグイン名よりも前に処理するため、先頭に '.' をつけている。
 	// 通常のプラグインは "CM3D2～" のように英数字から始まる名前をつけること
 	private const string CallbackName = ".CM3D2 ExternalSaveData";
+	private const string ExternalDataExtension = ".exsave.xml";
 
 	private static ManualLogSource _logger;
 
@@ -415,7 +417,11 @@ public class ExSaveData : BaseUnityPlugin {
 	}
 
 	private static string GetExternalSaveDataPath(int saveIndex) {
-		return GetSaveDataPath(saveIndex) + ".exsave.xml";
+		return GetSaveDataPath(saveIndex) + ExternalDataExtension;
+	}
+
+	private static string GetExternalSaveDataPath(string saveFilePath) {
+		return saveFilePath + ExternalDataExtension;
 	}
 
 	private static bool SetMaidName(Maid maid) {
@@ -442,38 +448,63 @@ public class ExSaveData : BaseUnityPlugin {
 		// 分かっていないのでとりあえずこのまま。
 	}
 
-	private static void OnDeserialize(GameMain __instance, int f_nSaveNo) {
-		if (f_nSaveNo == -1) {
-			return;
-		}
-
-		var xmlFilePath = GetExternalSaveDataPath(f_nSaveNo);
+	private static void LoadExternalData(string saveFilePath) {
+		var xmlFilePath = GetExternalSaveDataPath(saveFilePath);
 		_saveData = new();
 		if (File.Exists(xmlFilePath)) {
 			_saveData.Load(xmlFilePath);
 		}
 	}
 
-	private static void OnSerialize(GameMain __instance, int f_nSaveNo, string f_strComment) {
-		if (f_nSaveNo == -1) {
-			return;
-		}
-
+	private static void SaveExternalData(string saveFilePath) {
 		var cm = GameMain.Instance.CharacterMgr;
 		for (var i = 0; i < cm.GetStockMaidCount(); i++) {
 			var maid = cm.GetStockMaid(i);
 			SetMaidName(maid);
 		}
 		CleanupMaids();
-		var path = GetSaveDataPath(f_nSaveNo);
-		var xmlFilePath = GetExternalSaveDataPath(f_nSaveNo);
-		_saveData.Save(xmlFilePath, path);
+		var xmlFilePath = GetExternalSaveDataPath(saveFilePath);
+		_saveData.Save(xmlFilePath, saveFilePath);
 	}
 
-	private static void OnDeleteSerializeData(GameMain __instance, int f_nSaveNo) {
-		var xmlFilePath = GetExternalSaveDataPath(f_nSaveNo);
+	private static void DeleteExternalData(string saveFilePath) {
+		var xmlFilePath = GetExternalSaveDataPath(saveFilePath);
 		if (File.Exists(xmlFilePath)) {
 			File.Delete(xmlFilePath);
 		}
+	}
+
+	private static void OnDeserialize(GameMain __instance, int f_nSaveNo) {
+		if (f_nSaveNo != -1) {
+			LoadExternalData(GetSaveDataPath(f_nSaveNo));
+		}
+	}
+
+	private static void OnSerialize(GameMain __instance, int f_nSaveNo, string f_strComment) {
+		if (f_nSaveNo != -1) {
+			SaveExternalData(GetSaveDataPath(f_nSaveNo));
+		}
+	}
+
+	private static void OnDeleteSerializeData(GameMain __instance, int f_nSaveNo) {
+		DeleteExternalData(GetSaveDataPath(f_nSaveNo));
+	}
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(MaidCafeManager), nameof(MaidCafeManager.Load), typeof(string))]
+	private static void MaidCafe_OnLoad(string saveFilePath) {
+		LoadExternalData(saveFilePath);
+	}
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(MaidCafeManager), nameof(MaidCafeManager.Save), typeof(string))]
+	private static void MaidCafe_OnSave(string saveFilePath) {
+		SaveExternalData(saveFilePath);
+	}
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(MaidCafeManager), nameof(MaidCafeManager.DeleteSaveData), typeof(string))]
+	private static void MaidCafe_OnDeleteSaveData(string saveFilePath) {
+		DeleteExternalData(saveFilePath);
 	}
 }
