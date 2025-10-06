@@ -1,3 +1,4 @@
+using System.Linq;
 using BepInEx;
 using BepInEx.Logging;
 using CM3D2.ExternalSaveData.Managed.GameMainCallbacks;
@@ -271,13 +272,7 @@ public class ExSaveData : BaseUnityPlugin {
 	}
 
 	public static void CleanupMaids() {
-		var guids = new List<string>();
-		var cm = GameMain.Instance.CharacterMgr;
-		for (var i = 0; i < cm.GetStockMaidCount(); i++) {
-			var maid = cm.GetStockMaid(i);
-			guids.Add(maid.status.guid);
-		}
-		CleanupMaids(guids);
+		CleanupMaids(GetStockMaids().Select(e => e.status.guid).ToList());
 	}
 
 	/// <summary>
@@ -395,6 +390,13 @@ public class ExSaveData : BaseUnityPlugin {
 		return GetMaidPluginData(pluginName)?.HasProperty(propName) ?? false;
 	}
 
+	private static IEnumerable<Maid> GetStockMaids() {
+		var characterManager = GameMain.Instance.CharacterMgr;
+		for (var i = 0; i < characterManager.GetStockMaidCount(); i++) {
+			yield return characterManager.GetStockMaid(i);
+		}
+	}
+
 	/// <summary>
 	/// セーブファイル番号から拡張セーブデータのファイル名を生成
 	/// </summary>
@@ -452,28 +454,26 @@ public class ExSaveData : BaseUnityPlugin {
 	}
 
 	private static void LoadExternalData(string saveFilePath) {
-		var xmlFilePath = GetExternalSaveDataPath(saveFilePath);
+		var externalDataPath = GetExternalSaveDataPath(saveFilePath);
 		_saveData = new();
-		if (File.Exists(xmlFilePath)) {
-			_saveData.Load(xmlFilePath);
+		if (File.Exists(externalDataPath)) {
+			_saveData.Load(externalDataPath);
 		}
 	}
 
 	private static void SaveExternalData(string saveFilePath) {
-		var cm = GameMain.Instance.CharacterMgr;
-		for (var i = 0; i < cm.GetStockMaidCount(); i++) {
-			var maid = cm.GetStockMaid(i);
+		foreach (var maid in GetStockMaids()) {
 			SetMaidName(maid);
 		}
 		CleanupMaids();
-		var xmlFilePath = GetExternalSaveDataPath(saveFilePath);
-		_saveData.Save(xmlFilePath, saveFilePath);
+		var externalDataPath = GetExternalSaveDataPath(saveFilePath);
+		_saveData.Save(externalDataPath, saveFilePath);
 	}
 
 	private static void DeleteExternalData(string saveFilePath) {
-		var xmlFilePath = GetExternalSaveDataPath(saveFilePath);
-		if (File.Exists(xmlFilePath)) {
-			File.Delete(xmlFilePath);
+		var externalDataPath = GetExternalSaveDataPath(saveFilePath);
+		if (File.Exists(externalDataPath)) {
+			File.Delete(externalDataPath);
 		}
 	}
 
