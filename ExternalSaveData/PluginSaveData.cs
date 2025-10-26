@@ -29,5 +29,7 @@ public class PluginSaveData {
 		public void SetBoolean(string propName, bool value) => ExSaveData.SetBool(_maid, _pluginName, propName, value);
 		public void SetInteger(string propName, int value) => ExSaveData.SetInt(_maid, _pluginName, propName, value);
 		public void SetFloat(string propName, float value) => ExSaveData.SetFloat(_maid, _pluginName, propName, value);
+
+		public void Remove(string propName) => ExSaveData.Remove(_maid, _pluginName, propName);
 	}
 }
