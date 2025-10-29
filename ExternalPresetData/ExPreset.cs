@@ -37,6 +37,15 @@ public class ExPreset : BaseUnityPlugin {
 		var version = new Version(GameUty.GetBuildVersionText());
 		Harmony.CreateAndPatchAll(typeof(ExPreset));
 		Harmony.CreateAndPatchAll(version.Major >= 3 ? typeof(ExPreset30) : typeof(ExPreset20));
+
+		// clear temporary external data when leaving editor
+		// avoids loading incorrect data when editing NPC maids back to back
+		SceneManager.sceneUnloaded += (scene) => {
+			if (scene.name == "SceneEdit") {
+				_xmlMemory = null;
+				xmlMemory = null;
+			}
+		};
 	}
 
 	public static void Load(Maid maid, CharacterMgr.Preset preset) {
