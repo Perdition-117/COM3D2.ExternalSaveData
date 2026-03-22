@@ -49,7 +49,9 @@ public class ExPreset : BaseUnityPlugin {
 	}
 
 	public static void Load(Maid maid, CharacterMgr.Preset preset) {
-		PluginsLoad(maid, preset);
+		if (preset.ePreType != CharacterMgr.PresetType.Wear) {
+			PluginsLoad(maid, preset);
+		}
 	}
 
 	private static void PluginsLoad(Maid maid, CharacterMgr.Preset preset) {
@@ -69,14 +71,14 @@ public class ExPreset : BaseUnityPlugin {
 		}
 
 		if (xml == null) {
-			return;
-		}
+			ExSaveData.ClearPluginData(maid);
+		} else {
+			foreach (var pluginName in ExternalSaveDataNodes) {
+				var node = xml.SelectSingleNode($"//plugin[@name='{pluginName}']");
+				if (node == null) continue;
 
-		foreach (var pluginName in ExternalSaveDataNodes) {
-			var node = xml.SelectSingleNode($"//plugin[@name='{pluginName}']");
-			if (node == null) continue;
-
-			ExSaveData.LoadPluginData(maid, pluginName, node);
+				ExSaveData.LoadPluginData(maid, pluginName, node);
+			}
 		}
 
 		// エディットシーン以外でもプリセットが使われるようになったが、

@@ -88,6 +88,12 @@ public class ExSaveData : BaseUnityPlugin {
 		}
 	}
 
+	public static void ClearPluginData(Maid maid) {
+		if (Contains(maid) && GetMaidData(maid) is BaseExternalMaidData maidSaveData) {
+			maidSaveData.ClearPluginData();
+		}
+	}
+
 	// backwards compatibility (ModItemExplorer)
 	public static void SetXml(Maid maid, string pluginName, XmlNode xmlNode) => LoadPluginData(maid, pluginName, xmlNode);
 
@@ -449,7 +455,7 @@ public class ExSaveData : BaseUnityPlugin {
 		//
 		// このメソッドはこれを回避するためのダミーメソッドで、
 		// GameMain.OnInitializeの末尾から呼び出される。
-		// 
+		//
 		// 本当はアトリビュート等でもっと良いやり方があるはずなんだろうけど、
 		// 分かっていないのでとりあえずこのまま。
 	}

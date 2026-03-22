@@ -37,6 +37,10 @@ internal abstract class BaseExternalMaidData {
 		return _plugins.TryGetValue(pluginName, out var plugin) ? plugin : null;
 	}
 
+	public void ClearPluginData() {
+		_plugins.Clear();
+	}
+
 	public bool SetPropertyValue(string pluginName, string propertyName, string value) {
 		if (!_plugins.TryGetValue(pluginName, out var plugin)) {
 			plugin = new(pluginName);

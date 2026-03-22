@@ -1,17 +1,17 @@
 <Project>
-  <PropertyGroup>
-    <Version>0.7.1</Version>
-  </PropertyGroup>
+	<PropertyGroup>
+		<Version>0.8.0</Version>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net35</TargetFramework>
-    <LangVersion>10</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net35</TargetFramework>
+		<LangVersion>10</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <BaseOutputPath>..\artifacts\</BaseOutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
-  </PropertyGroup>
+	<PropertyGroup>
+		<BaseOutputPath>..\artifacts\</BaseOutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<UseCommonOutputDirectory>true</UseCommonOutputDirectory>
+	</PropertyGroup>
 </Project>
