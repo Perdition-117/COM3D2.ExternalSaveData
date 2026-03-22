@@ -38,7 +38,8 @@ public class ExSaveData : BaseUnityPlugin {
 	private static void Apply(CharacterMgr.NpcData __instance, Maid maid) {
 		if (GameMain.Instance.CharacterMgr != null && maid != null && !maid.boMAN) {
 			_logger.LogDebug($"Applying NPC preset {__instance.presetFileName} ({maid.status.guid})...");
-			_saveData.NpcGuids[maid.status.guid] = __instance.uniqueName;
+			// Unlike uniqueName, presetFileName seems to be the same in all scenes.
+			_saveData.NpcGuids[maid.status.guid] = __instance.presetFileName;
 		}
 	}
 

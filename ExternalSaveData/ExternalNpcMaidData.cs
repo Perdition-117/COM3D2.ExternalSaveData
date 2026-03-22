@@ -1,22 +1,22 @@
 namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalNpcMaidData : BaseExternalMaidData {
-	private string _uniqueName;
+	private string _presetName;
 
 	public override void Load(XmlNode xmlNode) {
-		var uniqueName = xmlNode.GetAttribute("uniqueName");
-		SetMaid(uniqueName);
+		var presetName = xmlNode.GetAttribute("presetName");
+		SetMaid(presetName);
 
 		LoadPlugins(xmlNode);
 	}
 
 	public override void Save(XmlNode xmlNode) {
-		xmlNode.SetAttribute("uniqueName", _uniqueName);
+		xmlNode.SetAttribute("presetName", _presetName);
 
 		SavePlugins(xmlNode);
 	}
 
-	public void SetMaid(string uniqueName) {
-		_uniqueName = uniqueName;
+	public void SetMaid(string presetName) {
+		_presetName = presetName;
 	}
 }
