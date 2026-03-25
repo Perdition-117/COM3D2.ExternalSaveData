@@ -1,8 +1,8 @@
 namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalSaveData {
-	private readonly MaidDataManager<ExternalMaidData> _maidDataManager = new("maids", "guid");
-	private readonly MaidDataManager<ExternalNpcMaidData> _npcMaidDataManager = new("npcMaids", "uniqueName");
+	private readonly MaidDataManager<ExternalMaidData> _maidDataManager = new("maids", ExternalMaidData.SelectorAttribute);
+	private readonly MaidDataManager<ExternalNpcMaidData> _npcMaidDataManager = new("npcMaids", ExternalNpcMaidData.SelectorAttribute);
 
 	internal readonly Dictionary<string, string> NpcGuids = new();
 

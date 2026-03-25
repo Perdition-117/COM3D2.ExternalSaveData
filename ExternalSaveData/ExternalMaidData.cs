@@ -1,6 +1,7 @@
 namespace CM3D2.ExternalSaveData.Managed;
 
 internal class ExternalMaidData : BaseExternalMaidData {
+	public const string SelectorAttribute = "guid";
 	public const string GlobalMaidGuid = "global";
 
 	private string _guid;
@@ -9,7 +10,7 @@ internal class ExternalMaidData : BaseExternalMaidData {
 	private string _createdTime;
 
 	public override void Load(XmlNode xmlNode) {
-		var guid = xmlNode.GetAttribute("guid");
+		var guid = xmlNode.GetAttribute(SelectorAttribute);
 		var lastName = xmlNode.GetAttribute("lastname");
 		var firstName = xmlNode.GetAttribute("firstname");
 		var createdTime = xmlNode.GetAttribute("createtime");
@@ -19,7 +20,7 @@ internal class ExternalMaidData : BaseExternalMaidData {
 	}
 
 	public override void Save(XmlNode xmlNode) {
-		xmlNode.SetAttribute("guid", _guid);
+		xmlNode.SetAttribute(SelectorAttribute, _guid);
 		xmlNode.SetAttribute("lastname", _lastName);
 		xmlNode.SetAttribute("firstname", _firstName);
 		xmlNode.SetAttribute("createtime", _createdTime);
