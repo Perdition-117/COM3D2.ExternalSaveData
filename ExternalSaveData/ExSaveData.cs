@@ -5,6 +5,7 @@ using CM3D2.ExternalSaveData.Managed.GameMainCallbacks;
 using ExternalSaveData;
 using HarmonyLib;
 using MaidCafe;
+using UnityEngine.Events;
 
 namespace CM3D2.ExternalSaveData.Managed;
 
@@ -18,6 +19,8 @@ public class ExSaveData : BaseUnityPlugin {
 	private const string ExternalDataExtension = ".exsave.xml";
 
 	private static ManualLogSource _logger;
+
+	public static UnityEvent ExternalDataLoaded = new();
 
 	private void Awake() {
 		_logger = Logger;
@@ -465,6 +468,7 @@ public class ExSaveData : BaseUnityPlugin {
 		_saveData = new();
 		if (File.Exists(externalDataPath)) {
 			_saveData.Load(externalDataPath);
+			ExternalDataLoaded.Invoke();
 		}
 	}
 
