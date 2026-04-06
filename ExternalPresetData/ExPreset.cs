@@ -17,10 +17,10 @@ namespace CM3D2.ExternalPreset.Managed;
 [BepInPlugin("COM3D2.ExternalPresetData", MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency("COM3D2.ExternalSaveData")]
 public class ExPreset : BaseUnityPlugin {
-	private static readonly HashSet<string> ExternalSaveDataNodes = new();
+	private static readonly HashSet<string> PluginNodes = new();
 
 	// backwards compatibility (AutoConverter, ModItemExplorer)
-	private static readonly HashSet<string> exsaveNodeNameMap = ExternalSaveDataNodes;
+	private static readonly HashSet<string> exsaveNodeNameMap = PluginNodes;
 
 	private static XmlDocument _xmlMemory = null;
 	// backwards compatibility (ModItemExplorer)
@@ -48,13 +48,16 @@ public class ExPreset : BaseUnityPlugin {
 		};
 	}
 
-	public static void Load(Maid maid, CharacterMgr.Preset preset) {
-		if (preset.ePreType != CharacterMgr.PresetType.Wear) {
-			PluginsLoad(maid, preset);
-		}
+	public static void AddPluginNode(string pluginName) {
+		PluginNodes.Add(pluginName);
 	}
 
-	private static void PluginsLoad(Maid maid, CharacterMgr.Preset preset) {
+	[Obsolete($"Use {nameof(AddPluginNode)}")]
+	public static void AddExSaveNode(string pluginName) => AddPluginNode(pluginName);
+
+	private static void LoadPreset(Maid maid, CharacterMgr.Preset preset) {
+		if (preset.ePreType == CharacterMgr.PresetType.Wear) return;
+
 		XmlDocument xml = null;
 
 		if (preset.strFileName == "") {
@@ -62,18 +65,18 @@ public class ExPreset : BaseUnityPlugin {
 			_xmlMemory = null;
 			xmlMemory = null;
 		} else {
-			var exPresetPath = GetExPresetPath(preset.strFileName);
+			var externalPresetPath = GetExternalPresetPath(preset.strFileName);
 
-			if (File.Exists(exPresetPath)) {
+			if (File.Exists(externalPresetPath)) {
 				xml = new XmlDocument();
-				xml.Load(exPresetPath);
+				xml.Load(externalPresetPath);
 			}
 		}
 
 		if (xml == null) {
 			ExSaveData.ClearPluginData(maid);
 		} else {
-			foreach (var pluginName in ExternalSaveDataNodes) {
+			foreach (var pluginName in PluginNodes) {
 				var node = xml.SelectSingleNode($"//plugin[@name='{pluginName}']");
 				if (node == null) continue;
 
@@ -101,7 +104,7 @@ public class ExPreset : BaseUnityPlugin {
 		var rootNode = xmlDocument.AppendChild(xmlDocument.CreateElement("plugins"));
 		var hasNodes = false;
 
-		foreach (var pluginName in ExternalSaveDataNodes) {
+		foreach (var pluginName in PluginNodes) {
 			var node = xmlDocument.CreateElement("plugin");
 			if (ExSaveData.TrySavePluginData(maid, pluginName, node)) {
 				rootNode.AppendChild(node);
@@ -121,47 +124,36 @@ public class ExPreset : BaseUnityPlugin {
 		}
 	}
 
-	public static void Save(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
+	private static void SavePreset(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
 		// file name may be null when the save method is intercepted and cancelled
-		if (presetFileName != null) {
-			//MaidVoicePitchSave(maid, presetFileName, presetType);
-			PluginsSave(maid, presetFileName, presetType);
-		}
-	}
+		if (presetFileName == null) return;
 
-	private static void PluginsSave(Maid maid, string presetFileName, CharacterMgr.PresetType presetType) {
 		if (TryGetExternalSaveData(maid, presetType, out var xml)) {
-			xml.Save(GetExPresetPath(presetFileName));
+			xml.Save(GetExternalPresetPath(presetFileName));
 		}
 	}
 
-	public static void Delete(CharacterMgr.Preset preset) {
-		var exPresetPath = GetExPresetPath(preset.strFileName);
-		if (File.Exists(exPresetPath)) {
-			File.Delete(exPresetPath);
+	private static void DeletePreset(CharacterMgr.Preset preset) {
+		var externalPresetPath = GetExternalPresetPath(preset.strFileName);
+		if (File.Exists(externalPresetPath)) {
+			File.Delete(externalPresetPath);
 		}
 	}
 
-	private static string GetExPresetPath(string presetFileName) {
+	private static string GetExternalPresetPath(string presetFileName) {
 		return Path.Combine(GameMain.Instance.CharacterMgr.PresetDirectory, $"{presetFileName}.expreset.xml");
-	}
-
-	// EXSaveDataに保存する情報のうち、EXプリセットにもセーブするノード名を設定
-	// 例はMaidVoicePitchなどを参照
-	public static void AddExSaveNode(string pluginName) {
-		ExternalSaveDataNodes.Add(pluginName);
 	}
 
 	class ExPreset30 {
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetSet), typeof(Maid), typeof(CharacterMgr.Preset), typeof(bool))]
-		private static void OnPresetSet(Maid f_maid, CharacterMgr.Preset f_prest) => Load(f_maid, f_prest);
+		private static void OnPresetSet(Maid f_maid, CharacterMgr.Preset f_prest) => LoadPreset(f_maid, f_prest);
 	}
 
 	class ExPreset20 {
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(CharacterMgr), nameof(CharacterMgr.PresetSet), typeof(Maid), typeof(CharacterMgr.Preset))]
-		private static void OnPresetSet(Maid f_maid, CharacterMgr.Preset f_prest) => Load(f_maid, f_prest);
+		private static void OnPresetSet(Maid f_maid, CharacterMgr.Preset f_prest) => LoadPreset(f_maid, f_prest);
 	}
 
 	[HarmonyTranspiler]
@@ -178,7 +170,7 @@ public class ExPreset : BaseUnityPlugin {
 				new CodeInstruction(OpCodes.Ldarg_1),
 				new CodeInstruction(OpCodes.Ldloc_S, codes[instructionIndex - 1].operand),
 				new CodeInstruction(OpCodes.Ldarg_2),
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ExPreset), nameof(Save)))
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ExPreset), nameof(SavePreset)))
 			);
 
 		return codeMatcher.InstructionEnumeration();
@@ -193,7 +185,7 @@ public class ExPreset : BaseUnityPlugin {
 			.MatchEndForward(new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(File), nameof(File.Delete))))
 			.Insert(
 				new CodeInstruction(OpCodes.Ldarg_1),
-				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ExPreset), nameof(Delete)))
+				new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ExPreset), nameof(DeletePreset)))
 			);
 
 		return codeMatcher.InstructionEnumeration();
