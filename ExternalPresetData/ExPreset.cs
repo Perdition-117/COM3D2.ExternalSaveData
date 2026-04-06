@@ -27,7 +27,9 @@ public class ExPreset : BaseUnityPlugin {
 	private static XmlDocument xmlMemory = null;
 
 	// プリセット適用時に通知が必要な場合はここに登録
+	[Obsolete($"Use {nameof(ExternalDataLoaded)}")]
 	public static UnityEvent loadNotify = new();
+	public static ExternalDataLoadedEvent ExternalDataLoaded = new();
 
 	private static ManualLogSource _logger;
 
@@ -90,6 +92,7 @@ public class ExPreset : BaseUnityPlugin {
 		if (SceneManager.GetActiveScene().name == "SceneEdit") {
 			_logger.LogDebug("Notify");
 			loadNotify.Invoke();
+			ExternalDataLoaded.Invoke(maid);
 		}
 	}
 
@@ -190,4 +193,6 @@ public class ExPreset : BaseUnityPlugin {
 
 		return codeMatcher.InstructionEnumeration();
 	}
+
+	public class ExternalDataLoadedEvent : UnityEvent<Maid> { }
 }
