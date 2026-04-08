@@ -57,6 +57,10 @@ public class ExPreset : BaseUnityPlugin {
 	[Obsolete($"Use {nameof(AddPluginNode)}")]
 	public static void AddExSaveNode(string pluginName) => AddPluginNode(pluginName);
 
+	public static bool HasPluginNode(string pluginName) {
+		return PluginNodes.Contains(pluginName);
+	}
+
 	private static void LoadPreset(Maid maid, CharacterMgr.Preset preset) {
 		if (preset.ePreType == CharacterMgr.PresetType.Wear) return;
 
